@@ -19,7 +19,7 @@ type HttpClient struct {
 
 func (client HttpClient) NewReqeust(action string, endpoint string, body []byte, headers map[string]string) (*http.Request, error) {
 
-	request, err := http.NewRequest(action, stringtool.RemoveDuplicate(client.Config.Host+":"+client.Config.Port+"/"+endpoint, ''), bytes.NewBuffer(body))
+	request, err := http.NewRequest(action, stringtool.RemoveDuplicate(client.Config.Host+":"+client.Config.Port+"/"+endpoint, '/'), bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}

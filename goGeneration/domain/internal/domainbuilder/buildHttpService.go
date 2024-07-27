@@ -50,13 +50,13 @@ func (b *domainBuilder) buildHttpService(ctx context.Context) *domainBuilder {
 				return nil, err
 			}
 
-			req, err := http.NewRequest("GET", "http://example.com", nil)
+			req, err := {{ .Struct }}.NewRequest("GET", "http://example.com", nil)
 			{{.}}.Add("Content-Type", "application/json")
 			{{.}}.Add("Accept", "application/json")
 			return {{.}}.Post(ctx, url, body)
 			{{range .}}
 			`
-			return "", nil
+			return "", pkgs
 		}
 	}
 
