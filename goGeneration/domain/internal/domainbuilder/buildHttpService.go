@@ -48,7 +48,7 @@ func (b *domainBuilder) buildHttpService(ctx context.Context) *domainBuilder {
 			str := "body, err := json.Marshal(request)" + consts.LN
 			str += "if err != nil { return nil, err }" + consts.LN
 			str += fmt.Sprintf(
-				`req, err := %s.NewRequest(%s.MethodPost, %s, body, []map[string]string{"Content-Type": "application/json"})`,
+				`req, err := %s.NewRequest(%s.MethodPost, %s, body, map[string]string{"Content-Type": "application/json"})`,
 				httpService.GetMethodName(), consts.CommonPkgs["http"].Alias, httpService.GetMethodName(),
 			) + consts.LN
 			str += "if err != nil { return nil, err }" + consts.LN
