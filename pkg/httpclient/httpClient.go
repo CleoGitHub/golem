@@ -17,7 +17,7 @@ type HttpClient struct {
 	RefreshToken   string
 }
 
-func (client HttpClient) NewReqeust(action string, endpoint string, body []byte, headers map[string]string) (*http.Request, error) {
+func (client HttpClient) NewRequest(action string, endpoint string, body []byte, headers map[string]string) (*http.Request, error) {
 
 	request, err := http.NewRequest(action, stringtool.RemoveDuplicate(client.Config.Host+":"+client.Config.Port+"/"+endpoint, '/'), bytes.NewBuffer(body))
 	if err != nil {

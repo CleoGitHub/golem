@@ -2,6 +2,7 @@ package domainbuilder
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
@@ -44,19 +45,17 @@ func (b *domainBuilder) buildHttpService(ctx context.Context) *domainBuilder {
 				consts.CommonPkgs["http"],
 			}
 
-			template := `
-			body, err := json.Marshal(request)
-			if err != nil {
-				return nil, err
-			}
+			str := "body, err := json.Marshal(request)" + consts.LN
+			str += "if err != nil { return nil, err }" + consts.LN
+			str += fmt.Sprintf(
+				`req, err := %s.NewRequest(%s.MethodPost, %s, body, []map[string]string{"Content-Type": "application/json"})`,
+				httpService.GetMethodName(), consts.CommonPkgs["http"].Alias, httpService.GetMethodName(),
+			) + consts.LN
+			str += "if err != nil { return nil, err }" + consts.LN
+			str += fmt.Sprintf(`resp, err := %s.Do(req)`, httpService.GetMethodName()) + consts.LN
+			str += "if err != nil { return nil, err }" + consts.LN
 
-			req, err := {{ .Struct }}.NewRequest("GET", "http://example.com", nil)
-			{{.}}.Add("Content-Type", "application/json")
-			{{.}}.Add("Accept", "application/json")
-			return {{.}}.Post(ctx, url, body)
-			{{range .}}
-			`
-			return "", pkgs
+			return str, pkgs
 		}
 	}
 
