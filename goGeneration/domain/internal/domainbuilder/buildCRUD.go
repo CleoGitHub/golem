@@ -207,15 +207,17 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 		b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Request)
 		b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Result)
 
-		usecase = usecase.Copy()
-		usecase.Function.Name = strings.Replace(usecase.Function.Name, "Get", "GetActive", 1)
-		usecase.Request.Name = strings.Replace(usecase.Request.Name, "Get", "GetActive", 1)
-		usecase.Result.Name = strings.Replace(usecase.Result.Name, "Get", "GetActive", 1)
-		usecase.Roles = crudDefinition.List.RolesForActive
-		b.Domain.Usecases = append(b.Domain.Usecases, usecase)
-		b.CRUDActionToUsecase[crudDefinition.List] = usecase
-		b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Request)
-		b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Result)
+		if on.Activable {
+			usecase = usecase.Copy()
+			usecase.Function.Name = strings.Replace(usecase.Function.Name, "Get", "GetActive", 1)
+			usecase.Request.Name = strings.Replace(usecase.Request.Name, "Get", "GetActive", 1)
+			usecase.Result.Name = strings.Replace(usecase.Result.Name, "Get", "GetActive", 1)
+			usecase.Roles = crudDefinition.List.RolesForActive
+			b.Domain.Usecases = append(b.Domain.Usecases, usecase)
+			b.CRUDActionToUsecase[crudDefinition.List] = usecase
+			b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Request)
+			b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Result)
+		}
 	}
 
 	if crudDefinition.List != nil && crudDefinition.List.Active {
@@ -279,61 +281,22 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 			},
 		})
 
-		// usecase.Request.Fields = append(usecase.Request.Fields, &model.Field{
-		// 	Name: "OrderBy",
-		// 	Type: model.PrimitiveTypeString,
-		// 	Tags: []*model.Tag{
-		// 		{
-		// 			Name:   "json",
-		// 			Values: []string{"orderBy"},
-		// 		},
-		// 	},
-		// })
-
-		// usecase.Request.Fields = append(usecase.Request.Fields, &model.Field{
-		// 	Name: "Page",
-		// 	Type: model.PrimitiveTypeInt,
-		// 	Tags: []*model.Tag{
-		// 		{
-		// 			Name:   "json",
-		// 			Values: []string{"page"},
-		// 		},
-		// 		{
-		// 			Name:   "validate",
-		// 			Values: []string{"gt:0"},
-		// 		},
-		// 	},
-		// })
-
-		// usecase.Request.Fields = append(usecase.Request.Fields, &model.Field{
-		// 	Name: "ItemsPerPage",
-		// 	Type: model.PrimitiveTypeInt,
-		// 	Tags: []*model.Tag{
-		// 		{
-		// 			Name:   "json",
-		// 			Values: []string{"itemsPerPage"},
-		// 		},
-		// 		{
-		// 			Name:   "validate",
-		// 			Values: []string{"gt:0"},
-		// 		},
-		// 	},
-		// })
-
 		b.Domain.Usecases = append(b.Domain.Usecases, usecase)
 		b.CRUDActionToUsecase[crudDefinition.List] = usecase
 		b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Request)
 		b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Result)
 
-		usecase = usecase.Copy()
-		usecase.Function.Name = strings.Replace(usecase.Function.Name, "List", "ListActive", 1)
-		usecase.Request.Name = strings.Replace(usecase.Request.Name, "List", "ListActive", 1)
-		usecase.Result.Name = strings.Replace(usecase.Result.Name, "List", "ListActive", 1)
-		usecase.Roles = crudDefinition.List.RolesForActive
-		b.Domain.Usecases = append(b.Domain.Usecases, usecase)
-		b.CRUDActionToUsecase[crudDefinition.List] = usecase
-		b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Request)
-		b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Result)
+		if on.Activable {
+			usecase = usecase.Copy()
+			usecase.Function.Name = strings.Replace(usecase.Function.Name, "List", "ListActive", 1)
+			usecase.Request.Name = strings.Replace(usecase.Request.Name, "List", "ListActive", 1)
+			usecase.Result.Name = strings.Replace(usecase.Result.Name, "List", "ListActive", 1)
+			usecase.Roles = crudDefinition.List.RolesForActive
+			b.Domain.Usecases = append(b.Domain.Usecases, usecase)
+			b.CRUDActionToUsecase[crudDefinition.List] = usecase
+			b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Request)
+			b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Result)
+		}
 	}
 
 	if crudDefinition.Delete != nil && crudDefinition.Delete.Active {

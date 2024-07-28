@@ -22,6 +22,10 @@ func TypeDefinitionToType(ctx context.Context, typeDefinition coredomaindefiniti
 		return model.PrimitiveTypeByte, nil
 	case coredomaindefinition.PrimitiveTypeBytes.GetType(), coredomaindefinition.PrimitiveTypeFile.GetType():
 		return model.PrimitiveTypeBytes, nil
+	case coredomaindefinition.PrimitiveTypeStringArray.GetType():
+		return &model.ArrayType{
+			Type: model.PrimitiveTypeString,
+		}, nil
 	case coredomaindefinition.PrimitiveTypeDate.GetType(),
 		coredomaindefinition.PrimitiveTypeDateTime.GetType(),
 		coredomaindefinition.PrimitiveTypeTime.GetType():

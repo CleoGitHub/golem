@@ -6,6 +6,7 @@ import (
 
 	"github.com/cleoGitHub/golem/coredomaindefinition"
 	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleoGitHub/golem/pkg/merror"
 	"github.com/cleoGitHub/golem/pkg/stringtool"
 )
 
@@ -26,7 +27,7 @@ func (b *domainBuilder) buildUsecase(ctx context.Context, usecaseDefinition *cor
 	for _, param := range usecaseDefinition.Args {
 		t, err := TypeDefinitionToType(ctx, param.Type)
 		if err != nil {
-			b.Err = err
+			b.Err = merror.Stack(err)
 			return b
 		}
 		f := &model.Field{
@@ -54,27 +55,32 @@ func (b *domainBuilder) buildUsecase(ctx context.Context, usecaseDefinition *cor
 					validationsValues = append(validationsValues, "gt:"+s)
 				} else {
 					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
+					return b
 				}
 			case coredomaindefinition.ValidationRuleGTE:
 				if s, ok := validation.Value.(string); ok {
 					validationsValues = append(validationsValues, "gte:"+s)
 				} else {
 					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
+					return b
 				}
 			case coredomaindefinition.ValidationRuleLT:
 				if s, ok := validation.Value.(string); ok {
 					validationsValues = append(validationsValues, "lt:"+s)
 				} else {
 					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
+					return b
 				}
 			case coredomaindefinition.ValidationRuleLTE:
 				if s, ok := validation.Value.(string); ok {
 					validationsValues = append(validationsValues, "lte:"+s)
 				} else {
 					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
+					return b
 				}
 			case coredomaindefinition.ValidationRuleUnique, coredomaindefinition.ValidationRuleUniqueIn:
 				b.Err = NewErrUnexpectedValidationRule(string(validation.Rule))
+				return b
 			}
 		}
 

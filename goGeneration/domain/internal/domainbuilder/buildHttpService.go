@@ -48,12 +48,16 @@ func (b *domainBuilder) buildHttpService(ctx context.Context) *domainBuilder {
 			str := "body, err := json.Marshal(request)" + consts.LN
 			str += "if err != nil { return nil, err }" + consts.LN
 			str += fmt.Sprintf(
-				`req, err := %s.NewRequest(%s.MethodPost, %s, body, map[string]string{"Content-Type": "application/json"})`,
-				httpService.GetMethodName(), consts.CommonPkgs["http"].Alias, httpService.GetMethodName(),
+				`req, err := %s.NewRequest(%s.MethodPost, "%s", body, map[string]string{"Content-Type": "application/json"})`,
+				httpService.GetMethodName(), consts.CommonPkgs["http"].Alias, b.GetHttpRoute(ctx, usecase),
 			) + consts.LN
 			str += "if err != nil { return nil, err }" + consts.LN
 			str += fmt.Sprintf(`resp, err := %s.Do(req)`, httpService.GetMethodName()) + consts.LN
 			str += "if err != nil { return nil, err }" + consts.LN
+			str += fmt.Sprintf("result := &%s{}", m.Results[0].Type.(*model.PointerType).Type.GetType()) + consts.LN
+			str += "if err = json.Unmarshal(resp, result); err != nil { return nil, err }" + consts.LN
+
+			str += "return result, nil"
 
 			return str, pkgs
 		}

@@ -8,16 +8,17 @@ type PrimitiveType string
 
 // All meta type to define primitive type
 const (
-	PrimitiveTypeInt      PrimitiveType = "int"
-	PrimitiveTypeFloat    PrimitiveType = "float"
-	PrimitiveTypeString   PrimitiveType = "string"
-	PrimitiveTypeBool     PrimitiveType = "bool"
-	PrimitiveTypeByte     PrimitiveType = "byte"
-	PrimitiveTypeBytes    PrimitiveType = "bytes"
-	PrimitiveTypeDate     PrimitiveType = "date"
-	PrimitiveTypeDateTime PrimitiveType = "datetime"
-	PrimitiveTypeTime     PrimitiveType = "time"
-	PrimitiveTypeFile     PrimitiveType = "file"
+	PrimitiveTypeInt         PrimitiveType = "int"
+	PrimitiveTypeFloat       PrimitiveType = "float"
+	PrimitiveTypeString      PrimitiveType = "string"
+	PrimitiveTypeBool        PrimitiveType = "bool"
+	PrimitiveTypeByte        PrimitiveType = "byte"
+	PrimitiveTypeBytes       PrimitiveType = "bytes"
+	PrimitiveTypeDate        PrimitiveType = "date"
+	PrimitiveTypeDateTime    PrimitiveType = "datetime"
+	PrimitiveTypeTime        PrimitiveType = "time"
+	PrimitiveTypeFile        PrimitiveType = "file"
+	PrimitiveTypeStringArray PrimitiveType = "StringArray"
 )
 
 func (t PrimitiveType) GetType() string {

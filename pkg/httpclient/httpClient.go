@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
+	"github.com/cleoGitHub/golem/pkg/merror"
 	"github.com/cleoGitHub/golem/pkg/stringtool"
 )
 
@@ -48,59 +48,46 @@ func (client *HttpClient) Authenticate() error {
 	return nil
 }
 
-func (client HttpClient) Do(request *http.Request) ([]byte, error) {
+func (client HttpClient) Do(request *http.Request) ([]byte, int, error) {
 	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", client.Token))
 
 	c := http.Client{}
 	var resp *http.Response
 	var err error
+	var unauthorizedOnce bool = false
+retryLoop:
 	for i := 0; i < client.Config.NbRetry; i++ {
 		resp, err = c.Do(request)
-		if err == nil && resp.StatusCode == 200 {
-			break
-		}
 		if err != nil {
-			fmt.Printf("%+v Error: %s\n", time.Now().Format(time.TimeOnly), err)
+			// Use retry mecanism before returning an error
+			continue
 		}
-		if resp != nil {
-			defer resp.Body.Close()
-
-			response, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
+		switch resp.StatusCode {
+		case 200:
+			break retryLoop
+		case http.StatusForbidden, http.StatusUnauthorized:
+			if unauthorizedOnce {
+				return nil, resp.StatusCode, nil
 			}
-			fmt.Printf("statusCode: %d, message: %s\n", resp.StatusCode, response)
-			if resp.StatusCode == http.StatusNotFound {
-				fmt.Printf("Url not foud: %v\n", request.URL)
+			unauthorizedOnce = true
+			// call was unauthorized, try to authenticate before retrying
+			if err = client.Authenticate(); err != nil {
+				return nil, 0, merror.Stack(err)
 			}
-		}
-		fmt.Printf("\n")
-		if i < client.Config.NbRetry-1 {
-			time.Sleep(time.Second * time.Duration(client.Config.IntervalRetry))
+			i--
+		default:
+			return nil, resp.StatusCode, ErrUnexpectedStatus
 		}
 	}
 	if err != nil {
-		return nil, err
+		return nil, 0, merror.Stack(err)
 	}
 	defer resp.Body.Close()
 
 	response, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, 0, merror.Stack(err)
 	}
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("unexpected status code: %d\nurl: %s\nresponse: %s", resp.StatusCode, request.URL.RawPath, string(response))
-	}
-
-	return response, nil
-}
-
-func (client HttpClient) DoPost(endpoint string) ([]byte, error) {
-	request, err := http.NewRequest("GET", endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return client.Do(request)
+	return response, 0, nil
 }
