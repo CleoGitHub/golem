@@ -3,8 +3,8 @@ package domainbuilder
 import (
 	"context"
 
+	"github.com/cleoGitHub/golem-common/pkg/stringtool"
 	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/stringtool"
 )
 
 func (b *domainBuilder) GetDomainUsecase(ctx context.Context) *model.Interface {

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cleoGitHub/golem-common/pkg/merror"
+	"github.com/cleoGitHub/golem-common/pkg/stringtool"
 	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
 	"github.com/cleoGitHub/golem/goGeneration/domain/internal/gopkgmanager"
 	"github.com/cleoGitHub/golem/goGeneration/domain/internal/stringifier"
 	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/merror"
-	"github.com/cleoGitHub/golem/pkg/stringtool"
 )
 
 func (g *GenerationUsecaseImpl) WriteGormTransactionUsecase(ctx context.Context, domain *model.Domain, m *model.Struct, path string) error {

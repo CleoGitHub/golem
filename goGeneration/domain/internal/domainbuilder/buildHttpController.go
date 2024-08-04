@@ -7,10 +7,10 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/cleoGitHub/golem-common/pkg/stringtool"
 	"github.com/cleoGitHub/golem/coredomaindefinition"
 	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
 	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/stringtool"
 )
 
 func (b *domainBuilder) buildHttpController(ctx context.Context) *domainBuilder {

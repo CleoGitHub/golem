@@ -4,9 +4,9 @@ import (
 	"context"
 	"slices"
 
+	"github.com/cleoGitHub/golem-common/pkg/merror"
 	"github.com/cleoGitHub/golem/coredomaindefinition"
 	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/merror"
 )
 
 func (b *domainBuilder) buildRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) *domainBuilder {

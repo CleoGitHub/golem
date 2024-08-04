@@ -3,9 +3,9 @@ package domainbuilder
 import (
 	"context"
 
+	"github.com/cleoGitHub/golem-common/pkg/stringtool"
 	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
 	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/stringtool"
 )
 
 func (b *domainBuilder) buildDomainRepository(ctx context.Context) *domainBuilder {
