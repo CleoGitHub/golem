@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cleoGitHub/golem/coredomaindefinition"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/merror"
-	"github.com/cleoGitHub/golem/pkg/stringtool"
+	"github.com/cleogithub/golem/coredomaindefinition"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/pkg/merror"
+	"github.com/cleogithub/golem/pkg/stringtool"
 )
 
 func (b *domainBuilder) buildUsecase(ctx context.Context, usecaseDefinition *coredomaindefinition.Usecase) *domainBuilder {
@@ -92,6 +92,25 @@ func (b *domainBuilder) buildUsecase(ctx context.Context, usecaseDefinition *cor
 		}
 		b.FieldToParamUsecaseRequest[f] = param
 		usecase.Request.Fields = append(usecase.Request.Fields, f)
+	}
+
+	for _, param := range usecaseDefinition.Results {
+		t, err := TypeDefinitionToType(ctx, param.Type)
+		if err != nil {
+			b.Err = merror.Stack(err)
+			return b
+		}
+		f := &model.Field{
+			Name:     stringtool.UpperFirstLetter(param.Name),
+			Type:     t,
+			JsonName: param.Name,
+			Tags: []*model.Tag{{
+				Name:   "json",
+				Values: []string{param.Name},
+			}},
+		}
+
+		usecase.Result.Fields = append(usecase.Result.Fields, f)
 	}
 
 	b.Domain.Usecases = append(b.Domain.Usecases, usecase)

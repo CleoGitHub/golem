@@ -3,9 +3,9 @@ package domainbuilder
 import (
 	"context"
 
-	"github.com/cleoGitHub/golem/coredomaindefinition"
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/coredomaindefinition"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
 func TypeDefinitionToType(ctx context.Context, typeDefinition coredomaindefinition.Type) (model.Type, error) {
@@ -55,5 +55,6 @@ func FieldDefinitionToField(ctx context.Context, fieldDefinition *coredomaindefi
 				Values: []string{fieldDefinition.Name},
 			},
 		},
+		JsonName: fieldDefinition.Name,
 	}, nil
 }

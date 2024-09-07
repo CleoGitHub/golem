@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/internal/gopkgmanager"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
 func StringifyConstsUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgManager, c *model.Consts) (string, error) {

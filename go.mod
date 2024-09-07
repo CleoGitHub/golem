@@ -1,4 +1,4 @@
-module github.com/cleoGitHub/golem
+module github.com/cleogithub/golem
 
 go 1.22.1
 

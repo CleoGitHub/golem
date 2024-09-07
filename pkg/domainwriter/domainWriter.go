@@ -3,7 +3,7 @@ package domainwriter
 import (
 	"os"
 
-	"github.com/cleoGitHub/golem/pkg/merror"
+	"github.com/cleogithub/golem/pkg/merror"
 )
 
 // DomainWriter is a struct to generate files and folder of hexagonal architecture.

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cleoGitHub/golem/coredomaindefinition"
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/merror"
-	"github.com/cleoGitHub/golem/pkg/stringtool"
+	"github.com/cleogithub/golem/coredomaindefinition"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/pkg/merror"
+	"github.com/cleogithub/golem/pkg/stringtool"
 )
 
 func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *domainBuilder {
@@ -51,21 +51,11 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 				pkgs := []*model.GoPkg{}
 				for _, relation := range on.Relations {
 					if relation.Type == model.RelationSingleMandatory || relation.Type == model.RelationSingleOptionnal {
-						// repo, ok := b.ModelToRepository[relation.On]
-						// if !ok {
-						// 	continue
-						// }
-
-						// getRepoMethod, ok := b.RepoToDomainRepoGetEntityRepoMethod[repo]
-						// if !ok {
-						// 	return "", nil
-						// }
-
 						content += "// Check relation exist" + consts.LN
 						for _, m := range b.Domain.DomainRepository.Methods {
 							if strings.Contains(m.Name, fmt.Sprintf("Get%s", relation.On.Struct.Name)) {
 								content += fmt.Sprintf(
-									`if _,err := %s.%s.Get%s(%sctx, %s%s.Get%sWithBy(map[string]interface{}{"Id": %s.%s}),%s); err != nil {`,
+									`if _,err := %s.%s.Get%s(%sctx, %s%s.Get%sWithBy(map[string]interface{}{"Id": %s.%s}),%s%s.Get%sWithRetriveInactive(true),%s); err != nil {`,
 									structName,
 									domainRepository.Name,
 									relation.On.Struct.Name,
@@ -75,6 +65,9 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 									relation.On.Struct.Name,
 									request,
 									relation.On.Struct.Name+"Id",
+									consts.LN,
+									b.Domain.Architecture.RepositoryPkg.Alias,
+									relation.On.Struct.Name,
 									consts.LN,
 								) + consts.LN
 
@@ -102,10 +95,6 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 						}
 					}
 				}
-				// getRepoMethod, ok := b.RepoToDomainRepoGetEntityRepoMethod[b.ModelToRepository[on]]
-				// if !ok {
-				// 	return "", nil
-				// }
 
 				for _, field := range on.Struct.Fields {
 					for _, validation := range b.FieldToValidationRules[field] {
@@ -124,6 +113,11 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 								field.Name,
 								request,
 								field.Name,
+								consts.LN,
+							)
+							content += fmt.Sprintf("%s.Get%sWithRetriveInactive(true),%s",
+								b.Domain.Architecture.RepositoryPkg.Alias,
+								on.Struct.Name,
 								consts.LN,
 							)
 							if action == "Update" {
@@ -274,6 +268,10 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 			f := usecase.Function.Copy().(*model.Function)
 			if !retriveInactive {
 				f.Name = strings.Replace(f.Name, "Get", "GetActive", 1)
+				s := f.Args[1].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct)
+				s.Name = strings.Replace(s.Name, "Get", "GetActive", 1)
+				s = f.Results[0].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct)
+				s.Name = strings.Replace(s.Name, "Get", "GetActive", 1)
 			}
 			request := usecase.Function.Args[1].Name
 			f.Content = func() (string, []*model.GoPkg) {
@@ -313,7 +311,7 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 
 				content += fmt.Sprintf(
 					"return &%s{ %s: %s }, nil",
-					usecase.Function.Results[0].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct).Name,
+					f.Results[0].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct).Name,
 					usecase.Function.Results[0].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct).Fields[0].Name,
 					on.JsonName,
 				) + consts.LN
@@ -327,33 +325,26 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 				b.Err = merror.Stack(fmt.Errorf("no usecase found for CRUDAction"))
 				return nil
 			}
-			getImpl(usecase, false)
 			getImpl(usecase, true)
+			if crud.On.Activable {
+				getImpl(usecase, false)
+			}
 		}
 
-		if crud.List != nil && crud.List.Active {
-			usecase, ok := b.CRUDActionToUsecase[crud.List]
-			if !ok {
-				b.Err = merror.Stack(fmt.Errorf("no usecase found for CRUDAction"))
-				return nil
-			}
+		listImpl := func(usecase *model.Usecase, retriveInactive bool) {
 			f := usecase.Function.Copy().(*model.Function)
+			fmt.Printf("listImpl: %s\n", f.Name)
+			if !retriveInactive {
+				f.Name = strings.Replace(f.Name, "List", "ListActive", 1)
+				s := f.Args[1].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct)
+				s.Name = strings.Replace(s.Name, "List", "ListActive", 1)
+				s = f.Results[0].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct)
+				s.Name = strings.Replace(s.Name, "List", "ListActive", 1)
+			}
 			request := usecase.Function.Args[1].Name
 			f.Content = func() (string, []*model.GoPkg) {
 				pkgs := make([]*model.GoPkg, 0)
 				content := ""
-				// getRepoMethod, ok := b.RepoToDomainRepoGetEntityRepoMethod[b.ModelToRepository[on]]
-				// if !ok {
-				// 	return "", nil
-				// }
-
-				// // create pagination from request
-				// content += fmt.Sprintf("pagination := %s.%s{",
-				// 	b.Domain.Architecture.RepositoryPkg.Alias, b.GetPagination(ctx).Name,
-				// ) + consts.LN
-				// content += fmt.Sprintf("Page: %s.Page,", request) + consts.LN
-				// content += fmt.Sprintf("ItemsPerPage: %s.ItemsPerPage,", request) + consts.LN
-				// content += "}" + consts.LN
 
 				content += fmt.Sprintf(
 					`%ss, err := %s.%s.List%s(%sctx,`,
@@ -377,6 +368,13 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 					request,
 					b.GetOrdering(ctx).Name,
 				) + consts.LN
+				if retriveInactive {
+					content += fmt.Sprintf(
+						`%s.List%sWithRetriveInactive(true),`,
+						b.Domain.Architecture.RepositoryPkg.Alias,
+						on.Struct.Name,
+					) + consts.LN
+				}
 				content += ")" + consts.LN
 
 				content += consts.IF_ERR
@@ -386,13 +384,25 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 
 				content += fmt.Sprintf(
 					"return &%s{ %s: %ss }, nil",
-					usecase.Function.Results[0].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct).Name,
+					f.Results[0].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct).Name,
 					usecase.Function.Results[0].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct).Fields[0].Name,
 					on.JsonName,
 				) + consts.LN
 				return content, pkgs
 			}
 			usecaseCRUDImpl.Methods = append(usecaseCRUDImpl.Methods, f)
+		}
+
+		if crud.List != nil && crud.List.Active {
+			usecase, ok := b.CRUDActionToUsecase[crud.List]
+			if !ok {
+				b.Err = merror.Stack(fmt.Errorf("no usecase found for CRUDAction"))
+				return nil
+			}
+			listImpl(usecase, true)
+			if crud.On.Activable {
+				listImpl(usecase, false)
+			}
 		}
 
 		if crud.Delete != nil && crud.Delete.Active {

@@ -1,5 +1,5 @@
 package consts
 
-import "github.com/cleoGitHub/golem/goGeneration/domain/model"
+import "github.com/cleogithub/golem/goGeneration/domain/model"
 
 var DefaultRepositoryMethods = []*model.Function{}

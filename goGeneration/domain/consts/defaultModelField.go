@@ -1,6 +1,6 @@
 package consts
 
-import "github.com/cleoGitHub/golem/coredomaindefinition"
+import "github.com/cleogithub/golem/coredomaindefinition"
 
 var DefaultModelFields = []*coredomaindefinition.Field{
 	{

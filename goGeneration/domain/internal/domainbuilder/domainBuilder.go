@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cleoGitHub/golem/coredomaindefinition"
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/coredomaindefinition"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
 // Builder for domain
@@ -67,7 +67,7 @@ type domainBuilder struct {
 }
 
 func NewDomainBuilder(
-	name string,
+	d *coredomaindefinition.Domain,
 	defaultModelFields []*coredomaindefinition.Field,
 ) *domainBuilder {
 	return &domainBuilder{
@@ -88,14 +88,14 @@ func NewDomainBuilder(
 		ModelToGormModel:       map[*model.Model]*model.GormModel{},
 
 		Domain: &model.Domain{
-			Name: name,
+			Name: d.Name,
 			Architecture: &model.Architecture{
 				ModelPkg: &model.GoPkg{
 					ShortName: "model",
 					Alias:     "model",
 					FullName: fmt.Sprintf(
 						"%s/domain/model",
-						name,
+						d.Name,
 					),
 				},
 				RepositoryPkg: &model.GoPkg{
@@ -103,7 +103,7 @@ func NewDomainBuilder(
 					Alias:     "repository",
 					FullName: fmt.Sprintf(
 						"%s/domain/port/repository",
-						name,
+						d.Name,
 					),
 				},
 				UsecasePkg: &model.GoPkg{
@@ -111,7 +111,7 @@ func NewDomainBuilder(
 					Alias:     "usecase",
 					FullName: fmt.Sprintf(
 						"%s/domain/usecase",
-						name,
+						d.Name,
 					),
 				},
 				ControllerPkg: &model.GoPkg{
@@ -119,7 +119,7 @@ func NewDomainBuilder(
 					Alias:     "controller",
 					FullName: fmt.Sprintf(
 						"%s/adapter/controller",
-						name,
+						d.Name,
 					),
 				},
 				GormAdapterPkg: &model.GoPkg{
@@ -127,7 +127,7 @@ func NewDomainBuilder(
 					Alias:     "gormadapter",
 					FullName: fmt.Sprintf(
 						"%s/adapter/repository/gormadapter",
-						name,
+						d.Name,
 					),
 				},
 				SdkPkg: &model.GoPkg{
@@ -135,9 +135,13 @@ func NewDomainBuilder(
 					Alias:     "client",
 					FullName: fmt.Sprintf(
 						"%s/sdk/client",
-						name,
+						d.Name,
 					),
 				},
+				JavascriptClient: fmt.Sprintf(
+					"%s/sdk/JS",
+					d.Name,
+				),
 			},
 		},
 	}

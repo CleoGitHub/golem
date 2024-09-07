@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cleoGitHub/golem/goGeneration/domain/internal/gopkgmanager"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/merror"
+	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/pkg/merror"
 )
 
 func StringifyFieldUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgManager, field *model.Field) (string, error) {

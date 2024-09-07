@@ -3,8 +3,8 @@ package domainbuilder
 import (
 	"context"
 
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
 func (b *domainBuilder) buildRepositoryErrors(ctx context.Context) *domainBuilder {

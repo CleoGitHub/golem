@@ -1,6 +1,6 @@
 package model
 
-import "github.com/cleoGitHub/golem/coredomaindefinition"
+import "github.com/cleogithub/golem/coredomaindefinition"
 
 type Run struct {
 	Domain           *Domain

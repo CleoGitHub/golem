@@ -3,8 +3,8 @@ package usecase
 import (
 	"context"
 
-	"github.com/cleoGitHub/golem/coredomaindefinition"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/coredomaindefinition"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
 type GenerationUsecase interface {

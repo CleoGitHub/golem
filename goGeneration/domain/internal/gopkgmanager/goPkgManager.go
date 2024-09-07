@@ -3,8 +3,8 @@ package gopkgmanager
 import (
 	"fmt"
 
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
 type GoPkgManager struct {

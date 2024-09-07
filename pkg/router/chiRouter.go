@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cleoGitHub/golem/pkg/merror"
+	"github.com/cleogithub/golem/pkg/merror"
 
 	"github.com/go-chi/chi"
 )

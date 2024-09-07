@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cleoGitHub/golem/coredomaindefinition"
-	"github.com/cleoGitHub/golem/pkg/stringtool"
+	"github.com/cleogithub/golem/coredomaindefinition"
+	"github.com/cleogithub/golem/pkg/stringtool"
 )
 
 func GetFieldName(ctx context.Context, fieldDefinition *coredomaindefinition.Field) string {

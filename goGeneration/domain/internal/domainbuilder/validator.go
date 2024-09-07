@@ -3,8 +3,8 @@ package domainbuilder
 import (
 	"context"
 
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
 func (b *domainBuilder) GetValidator(ctx context.Context) *model.Interface {
@@ -98,6 +98,39 @@ func (b *domainBuilder) GetValidator(ctx context.Context) *model.Interface {
 								Type: "Context",
 							},
 						},
+					},
+					{
+						Name: "field",
+						Type: model.PrimitiveTypeString,
+					},
+				},
+				Results: []*model.Param{
+					{
+						Type: model.PrimitiveTypeError,
+					},
+				},
+			},
+			{
+				Name: "ValidateMimeTypes",
+				Args: []*model.Param{
+					{
+						Name: "ctx",
+						Type: &model.PkgReference{
+							Pkg: consts.CommonPkgs["context"],
+							Reference: &model.ExternalType{
+								Type: "Context",
+							},
+						},
+					},
+					{
+						Name: "mimeTypes",
+						Type: &model.ArrayType{
+							Type: model.PrimitiveTypeString,
+						},
+					},
+					{
+						Name: "bytes",
+						Type: model.PrimitiveTypeBytes,
 					},
 					{
 						Name: "field",

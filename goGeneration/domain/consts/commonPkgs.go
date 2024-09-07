@@ -1,6 +1,6 @@
 package consts
 
-import "github.com/cleoGitHub/golem/goGeneration/domain/model"
+import "github.com/cleogithub/golem/goGeneration/domain/model"
 
 // CommonPkgs contains all following standart packages:
 // context
@@ -66,12 +66,12 @@ var CommonPkgs = map[string]*model.GoPkg{
 	"merror": {
 		Alias:     "merror",
 		ShortName: "merror",
-		FullName:  "github.com/cleoGitHub/golem/pkg/merror",
+		FullName:  "github.com/cleogithub/golem-common/pkg/merror",
 	},
 	"router": {
 		Alias:     "router",
 		ShortName: "router",
-		FullName:  "github.com/cleoGitHub/golem/pkg/router",
+		FullName:  "github.com/cleogithub/golem-common/pkg/router",
 	},
 	"slices": {
 		Alias:     "slices",
@@ -81,6 +81,6 @@ var CommonPkgs = map[string]*model.GoPkg{
 	"httpclient": {
 		Alias:     "httpclient",
 		ShortName: "httpclient",
-		FullName:  "github.com/cleoGitHub/golem/pkg/httpclient",
+		FullName:  "github.com/cleogithub/golem-common/pkg/httpclient",
 	},
 }

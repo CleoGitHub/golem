@@ -18,4 +18,6 @@ type Domain struct {
 	GormDomainRepository  *Struct
 	HttpService           *Struct
 	Service               *Interface
+	Pagination            *Struct
+	Ordering              *Struct
 }

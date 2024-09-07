@@ -4,11 +4,11 @@ import (
 	"context"
 	"os"
 
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/internal/gopkgmanager"
-	"github.com/cleoGitHub/golem/goGeneration/domain/internal/stringifier"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/merror"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
+	"github.com/cleogithub/golem/goGeneration/domain/internal/stringifier"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/pkg/merror"
 )
 
 func (g *GenerationUsecaseImpl) WriteUsecasesStructsUsecase(ctx context.Context, domain *model.Domain, path string) error {

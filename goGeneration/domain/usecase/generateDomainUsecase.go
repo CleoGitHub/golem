@@ -3,16 +3,16 @@ package usecase
 import (
 	"context"
 
-	"github.com/cleoGitHub/golem/coredomaindefinition"
-	"github.com/cleoGitHub/golem/goGeneration/domain/consts"
-	"github.com/cleoGitHub/golem/goGeneration/domain/internal/domainbuilder"
-	"github.com/cleoGitHub/golem/pkg/merror"
+	"github.com/cleogithub/golem/coredomaindefinition"
+	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/internal/domainbuilder"
+	"github.com/cleogithub/golem/pkg/merror"
 )
 
 // GenerateDomainUsecase implements GenerationUsecase.
 func (g *GenerationUsecaseImpl) GenerateDomainUsecase(ctx context.Context, domainDefinition coredomaindefinition.Domain, path string) error {
 	domainBuilder := domainbuilder.NewDomainBuilder(
-		domainDefinition.Name,
+		&domainDefinition,
 		consts.DefaultModelFields,
 	)
 
@@ -130,6 +130,10 @@ func (g *GenerationUsecaseImpl) GenerateDomainUsecase(ctx context.Context, domai
 	}
 
 	if err := g.GoTidyDomainUsecase(ctx, path, domain); err != nil {
+		return merror.Stack(err)
+	}
+
+	if err := g.GenerateJavascriptClientUsecase(ctx, domain, path); err != nil {
 		return merror.Stack(err)
 	}
 

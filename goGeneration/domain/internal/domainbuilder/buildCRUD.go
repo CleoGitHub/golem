@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cleoGitHub/golem/coredomaindefinition"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
-	"github.com/cleoGitHub/golem/pkg/merror"
+	"github.com/cleogithub/golem/coredomaindefinition"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/pkg/merror"
 )
 
 func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomaindefinition.CRUD) *domainBuilder {
@@ -212,9 +212,8 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 			usecase.Function.Name = strings.Replace(usecase.Function.Name, "Get", "GetActive", 1)
 			usecase.Request.Name = strings.Replace(usecase.Request.Name, "Get", "GetActive", 1)
 			usecase.Result.Name = strings.Replace(usecase.Result.Name, "Get", "GetActive", 1)
-			usecase.Roles = crudDefinition.List.RolesForActive
+			usecase.Roles = crudDefinition.Get.RolesForActive
 			b.Domain.Usecases = append(b.Domain.Usecases, usecase)
-			b.CRUDActionToUsecase[crudDefinition.List] = usecase
 			b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Request)
 			b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Result)
 		}
@@ -293,7 +292,6 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 			usecase.Result.Name = strings.Replace(usecase.Result.Name, "List", "ListActive", 1)
 			usecase.Roles = crudDefinition.List.RolesForActive
 			b.Domain.Usecases = append(b.Domain.Usecases, usecase)
-			b.CRUDActionToUsecase[crudDefinition.List] = usecase
 			b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Request)
 			b.Domain.UsecaseStructs = append(b.Domain.UsecaseStructs, usecase.Result)
 		}

@@ -3,8 +3,8 @@ package stringifier
 import (
 	"context"
 
-	"github.com/cleoGitHub/golem/goGeneration/domain/internal/gopkgmanager"
-	"github.com/cleoGitHub/golem/goGeneration/domain/model"
+	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
+	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
 func StringifyTypeUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgManager, t model.Type) (string, error) {
