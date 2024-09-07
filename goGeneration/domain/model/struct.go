@@ -1,6 +1,6 @@
 package model
 
-import "github.com/cleogithub/golem/pkg/stringtool"
+import "github.com/cleogithub/golem-common/pkg/stringtool"
 
 type Struct struct {
 	// Consts referenced in this struct

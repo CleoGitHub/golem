@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cleogithub/golem-common/pkg/merror"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
 	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
-	"github.com/cleogithub/golem/pkg/merror"
 )
 
 func StringifyFunctionUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgManager, function *model.Function) (string, error) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cleogithub/golem-common/pkg/merror"
 	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
-	"github.com/cleogithub/golem/pkg/merror"
 )
 
 func StringifyTagUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgManager, tag *model.Tag) (string, error) {

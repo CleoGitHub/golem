@@ -3,10 +3,10 @@ package usecase
 import (
 	"context"
 
+	"github.com/cleogithub/golem-common/pkg/merror"
 	"github.com/cleogithub/golem/coredomaindefinition"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
 	"github.com/cleogithub/golem/goGeneration/domain/internal/domainbuilder"
-	"github.com/cleogithub/golem/pkg/merror"
 )
 
 // GenerateDomainUsecase implements GenerationUsecase.

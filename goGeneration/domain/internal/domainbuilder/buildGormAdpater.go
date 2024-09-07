@@ -6,11 +6,11 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/cleogithub/golem-common/pkg/merror"
+	"github.com/cleogithub/golem-common/pkg/stringtool"
 	"github.com/cleogithub/golem/coredomaindefinition"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
-	"github.com/cleogithub/golem/pkg/merror"
-	"github.com/cleogithub/golem/pkg/stringtool"
 )
 
 func (b *domainBuilder) isRelationUpTreeActivable(on *model.Model, activableModels map[*model.Model]bool, relationDone []*model.Relation, joins *string, pkgs *[]*model.GoPkg) bool {

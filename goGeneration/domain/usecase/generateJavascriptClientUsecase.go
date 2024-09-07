@@ -9,10 +9,10 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/cleogithub/golem-common/pkg/merror"
+	"github.com/cleogithub/golem-common/pkg/stringtool"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
-	"github.com/cleogithub/golem/pkg/merror"
-	"github.com/cleogithub/golem/pkg/stringtool"
 )
 
 func getLevel(initialLevel string) (func(), func(), func() string, func()) {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cleogithub/golem-common/pkg/stringtool"
 	"github.com/cleogithub/golem/coredomaindefinition"
 	"github.com/cleogithub/golem/goGeneration/domain/internal/stringbuilder"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
-	"github.com/cleogithub/golem/pkg/stringtool"
 )
 
 func (b *domainBuilder) GetUsecaseValidatorImpl(ctx context.Context) *model.Struct {

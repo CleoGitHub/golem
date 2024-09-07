@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cleogithub/golem-common/pkg/stringtool"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
-	"github.com/cleogithub/golem/pkg/stringtool"
 )
 
 func (b *domainBuilder) buildHttpService(ctx context.Context) *domainBuilder {

@@ -5,8 +5,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/cleogithub/golem-common/pkg/merror"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
-	"github.com/cleogithub/golem/pkg/merror"
 )
 
 func (g *GenerationUsecaseImpl) InitDomainUsecase(ctx context.Context, domain *model.Domain, path string) error {
