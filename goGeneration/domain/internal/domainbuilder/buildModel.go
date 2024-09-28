@@ -28,7 +28,7 @@ func (b *domainBuilder) buildModel(ctx context.Context, modelDefinition *coredom
 	modelFieldNames := []string{}
 	for _, f := range b.DefaultModelFields {
 		modelFieldNames = append(modelFieldNames, f.Name)
-		field, err := FieldDefinitionToField(ctx, f)
+		field, err := b.FieldDefinitionToField(ctx, f)
 		if err != nil {
 			b.Err = merror.Stack(err)
 			return b
@@ -38,7 +38,7 @@ func (b *domainBuilder) buildModel(ctx context.Context, modelDefinition *coredom
 
 	// Add activable field if model is activable
 	if modelDefinition.Activable {
-		field, err := FieldDefinitionToField(ctx, &coredomaindefinition.Field{
+		field, err := b.FieldDefinitionToField(ctx, &coredomaindefinition.Field{
 			Name: "active",
 			Type: coredomaindefinition.PrimitiveTypeBool,
 		})
@@ -58,7 +58,7 @@ func (b *domainBuilder) buildModel(ctx context.Context, modelDefinition *coredom
 			b.Err = merror.Stack(NewErrDefaultFiedlRedefined(field.Name))
 			return b
 		}
-		f, err := FieldDefinitionToField(ctx, field)
+		f, err := b.FieldDefinitionToField(ctx, field)
 		if err != nil {
 			b.Err = merror.Stack(err)
 			return b

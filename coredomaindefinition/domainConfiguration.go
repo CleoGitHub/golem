@@ -1,6 +1,9 @@
 package coredomaindefinition
 
 type DomainConfiguration struct {
+	// DefaultOrderBy is the default order by for database request.
+	DefaultOrderBy string
+
 	// DomainFolder is the folder path of domain layer.
 	DomainFolder string
 	// ModelFolder is the folder path of model layer.

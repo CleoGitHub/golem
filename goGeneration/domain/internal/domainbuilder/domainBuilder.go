@@ -13,6 +13,8 @@ import (
 // Store model definition to build and then build on Build method
 // Only build on Build method as order is important
 type domainBuilder struct {
+	Definition *coredomaindefinition.Domain
+
 	// default model fields are added to all models
 	DefaultModelFields []*coredomaindefinition.Field
 
@@ -20,6 +22,9 @@ type domainBuilder struct {
 
 	// if error happened during build, error is returned on Build method
 	Err error
+
+	ModelBuilders      []*ModelBuilder
+	RepositoryBuilders []*RepositoryBuilder
 
 	// Store definition to build in order to build in normal order but call it in disered order
 	ModelDefinitionsToBuild      []*coredomaindefinition.Model
@@ -71,6 +76,7 @@ func NewDomainBuilder(
 	defaultModelFields []*coredomaindefinition.Field,
 ) *domainBuilder {
 	return &domainBuilder{
+		Definition:                       d,
 		DefaultModelFields:               defaultModelFields,
 		RepositoryDefinitionToRepository: map[*coredomaindefinition.Repository]*model.Repository{},
 		RelationToRelationDefinition:     map[*model.Relation]*coredomaindefinition.Relation{},
@@ -147,6 +153,38 @@ func NewDomainBuilder(
 	}
 }
 
+func (domainBuilder *domainBuilder) NewModelBuilder(ctx context.Context, modelDefinition *coredomaindefinition.Model) *ModelBuilder {
+	return NewModelBuilder(ctx, domainBuilder, modelDefinition, domainBuilder.DefaultModelFields)
+}
+
+func (domainBuilder *domainBuilder) NewRepositoryBuilder(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) *RepositoryBuilder {
+	return NewRepositoryBuilder(ctx, domainBuilder, repositoryDefinition)
+}
+
+func (domainBuilder *domainBuilder) GetModelPackage() *model.GoPkg {
+	return domainBuilder.Domain.Architecture.ModelPkg
+}
+
+func (domainBuilder *domainBuilder) GetRepositoryPackage() *model.GoPkg {
+	return domainBuilder.Domain.Architecture.RepositoryPkg
+}
+
+func (domainBuilder *domainBuilder) GetUsecasePackage() *model.GoPkg {
+	return domainBuilder.Domain.Architecture.UsecasePkg
+}
+
+func (domainBuilder *domainBuilder) GetControllerPackage() *model.GoPkg {
+	return domainBuilder.Domain.Architecture.ControllerPkg
+}
+
+func (domainBuilder *domainBuilder) GetGormAdapterPackage() *model.GoPkg {
+	return domainBuilder.Domain.Architecture.GormAdapterPkg
+}
+
+func (domainBuilder *domainBuilder) GetSdkPackage() *model.GoPkg {
+	return domainBuilder.Domain.Architecture.SdkPkg
+}
+
 func (b *domainBuilder) GetModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) (*model.Model, error) {
 	if m, ok := b.ModelDefinitionToModel[modelDefinition]; ok {
 		return m, nil
@@ -212,13 +250,22 @@ func (b *domainBuilder) Build(ctx context.Context) (*model.Domain, error) {
 	b.buildRepositoryErrors(ctx)
 
 	for _, modelDefinition := range b.ModelDefinitionsToBuild {
+		b.ModelBuilders = append(b.ModelBuilders, b.NewModelBuilder(ctx, modelDefinition))
 		b.buildModel(ctx, modelDefinition)
 	}
 	b.buildDomainRepository(ctx)
 	for _, repositoryDefinition := range b.RepositoryDefinitionsToBuild {
+		b.RepositoryBuilders = append(b.RepositoryBuilders, b.NewRepositoryBuilder(ctx, repositoryDefinition))
 		b.buildRepository(ctx, repositoryDefinition)
 	}
 	for _, relationDefinition := range b.RelationDefinitionsToBuild {
+		for _, modelBuilder := range b.ModelBuilders {
+			modelBuilder.WithRelation(ctx, relationDefinition)
+		}
+
+		for _, repositoryBuilder := range b.RepositoryBuilders {
+			repositoryBuilder.WithRelation(ctx, relationDefinition)
+		}
 		b.buildRelation(ctx, relationDefinition)
 	}
 	for _, crudDefinition := range b.CRUDToBuild {
@@ -266,6 +313,22 @@ func (b *domainBuilder) Build(ctx context.Context) (*model.Domain, error) {
 	b.buildGormAdpater(ctx)
 	b.buildService(ctx)
 	b.buildHttpService(ctx)
+
+	for _, modelBuilder := range b.ModelBuilders {
+		m, err := modelBuilder.Build(ctx)
+		if err != nil {
+			return nil, err
+		}
+		b.Domain.ModelsV2 = append(b.Domain.ModelsV2, m)
+	}
+
+	for _, repositoryBuilder := range b.RepositoryBuilders {
+		m, err := repositoryBuilder.Build(ctx)
+		if err != nil {
+			return nil, err
+		}
+		b.Domain.Ports = append(b.Domain.Ports, m)
+	}
 
 	if b.Err != nil {
 		return nil, b.Err

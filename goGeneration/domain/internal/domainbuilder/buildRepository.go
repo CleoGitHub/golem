@@ -681,6 +681,117 @@ func (b *domainBuilder) buildRepository(ctx context.Context, repositoryDefinitio
 		repo.Methods = append(repo.Methods, repoMethod)
 	}
 
+	for _, rel := range b.Definition.Relations {
+		if rel.Source == repositoryDefinition.On && rel.Type == coredomaindefinition.RelationTypeManyToMany || rel.Target == repositoryDefinition.On && rel.Type == coredomaindefinition.RelationTypeManyToMany {
+			var to *model.Model
+			if rel.Source == repositoryDefinition.On {
+				to = b.ModelDefinitionToModel[rel.Target]
+			} else {
+				to = b.ModelDefinitionToModel[rel.Source]
+			}
+
+			methodName := fmt.Sprintf("Add%sTo%s", to.Struct.Name, on.Struct.Name)
+			method := &model.Function{
+				Name: methodName,
+				Results: []*model.Param{
+					{
+						Type: model.PrimitiveTypeError,
+					},
+				},
+			}
+			repoMethod := &model.RepositoryMethod{}
+			// Delete method Context
+			ctxMethod := &model.Struct{
+				Name:   fmt.Sprintf("%sContext", methodName),
+				Fields: []*model.Field{},
+			}
+
+			ctxMethod.Fields = append(ctxMethod.Fields, transactionField)
+
+			repoMethod.Context = ctxMethod
+
+			repoMethod.Opt = &model.TypeDefinition{
+				Name: fmt.Sprintf("%sOpt", methodName),
+				Type: &model.Function{
+					Args: []*model.Param{
+						{
+							Name: "ctx",
+							Type: &model.PkgReference{
+								Pkg: b.Domain.Architecture.RepositoryPkg,
+								Reference: &model.PointerType{
+									Type: &model.PkgReference{
+										Pkg: b.Domain.Architecture.RepositoryPkg,
+										Reference: &model.ExternalType{
+											Type: ctxMethod.Name,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			for _, field := range ctxMethod.Fields {
+				opt := &model.Function{
+					Name: fmt.Sprintf("%sWith%s", methodName, field.Name),
+					Args: []*model.Param{
+						{
+							Name: stringtool.LowerFirstLetter(field.Name),
+							Type: field.Type,
+						},
+					},
+					Results: []*model.Param{
+						{
+							Type: &model.PkgReference{
+								Pkg:       b.Domain.Architecture.RepositoryPkg,
+								Reference: repoMethod.Opt,
+							},
+						},
+					},
+				}
+				opt.Content = func() (string, []*model.GoPkg) {
+					str := fmt.Sprintf("return func(ctx *%s) {", ctxMethod.Name)
+					str += fmt.Sprintf(" ctx.%s = %s", field.Name, stringtool.LowerFirstLetter(field.Name))
+					str += " }"
+					return str, nil
+				}
+				repoMethod.Opts = append(repoMethod.Opts, opt)
+			}
+			method.Args = append(method.Args, &model.Param{
+				Name: "ctx",
+				Type: &model.PkgReference{
+					Pkg: consts.CommonPkgs["context"],
+					Reference: &model.ExternalType{
+						Type: "Context",
+					},
+				},
+			})
+			method.Args = append(method.Args, &model.Param{
+				Name: rel.Source.Name + "Id",
+				Type: model.PrimitiveTypeString,
+			})
+			method.Args = append(method.Args, &model.Param{
+				Name: rel.Target.Name + "Id",
+				Type: model.PrimitiveTypeString,
+			})
+
+			method.Args = append(method.Args, &model.Param{
+				Name: "opts",
+				Type: &model.VariaidicType{
+					Type: &model.PkgReference{
+						Pkg:       b.Domain.Architecture.RepositoryPkg,
+						Reference: repoMethod.Opt,
+					},
+				},
+			})
+			// repoMethod.Function = method
+			b.Domain.DomainRepository.Methods = append(b.Domain.DomainRepository.Methods, method)
+
+			repo.Methods = append(repo.Methods, repoMethod)
+		}
+	}
+
 	b.RepositoryDefinitionToRepository[repositoryDefinition] = repo
 	b.ModelToRepository[on] = repo
 

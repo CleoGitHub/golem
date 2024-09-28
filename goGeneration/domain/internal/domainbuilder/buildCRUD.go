@@ -30,7 +30,7 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 				Name: "Create" + on.Struct.Name + "Request",
 			},
 			Result: &model.Struct{
-				Name: "Create" + on.Struct.Name + "Result",
+				Name: "Create" + on.Struct.Name + "Response",
 				Fields: []*model.Field{
 					{
 						Name: on.Struct.Name,
@@ -108,7 +108,7 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 				Name: "Update" + on.Struct.Name + "Request",
 			},
 			Result: &model.Struct{
-				Name: "Update" + on.Struct.Name + "Result",
+				Name: "Update" + on.Struct.Name + "Response",
 				Fields: []*model.Field{
 					{
 						Name: on.Struct.Name,
@@ -166,7 +166,7 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 				Name: "Get" + on.Struct.Name + "Request",
 			},
 			Result: &model.Struct{
-				Name: "Get" + on.Struct.Name + "Result",
+				Name: "Get" + on.Struct.Name + "Response",
 				Fields: []*model.Field{
 					{
 						Name: on.Struct.Name,
@@ -229,7 +229,7 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 				Name: "List" + on.Struct.Name + "Request",
 			},
 			Result: &model.Struct{
-				Name: "List" + on.Struct.Name + "Result",
+				Name: "List" + on.Struct.Name + "Response",
 				Fields: []*model.Field{
 					{
 						Name: on.Struct.Name + "s",
@@ -307,7 +307,7 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 				Name: "Delete" + on.Struct.Name + "Request",
 			},
 			Result: &model.Struct{
-				Name:   "Delete" + on.Struct.Name + "Result",
+				Name:   "Delete" + on.Struct.Name + "Response",
 				Fields: []*model.Field{},
 			},
 		}

@@ -333,7 +333,6 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 
 		listImpl := func(usecase *model.Usecase, retriveInactive bool) {
 			f := usecase.Function.Copy().(*model.Function)
-			fmt.Printf("listImpl: %s\n", f.Name)
 			if !retriveInactive {
 				f.Name = strings.Replace(f.Name, "List", "ListActive", 1)
 				s := f.Args[1].Type.(*model.PointerType).Type.(*model.PkgReference).Reference.(*model.Struct)
@@ -438,6 +437,57 @@ func (b *domainBuilder) buildUsecaseCRUDImplementation(ctx context.Context) *dom
 			}
 			usecaseCRUDImpl.Methods = append(usecaseCRUDImpl.Methods, f)
 		}
+
+		// for _, rel := range b.DomainDefinition.Relations {
+		// 	if rel.Source == crud.On && rel.Type == coredomaindefinition.RelationTypeManyToMany || rel.Target == crud.On && rel.Type == coredomaindefinition.RelationTypeManyToMany {
+		// 		var to *model.Model
+		// 		if rel.Source == crud.On {
+		// 			to = b.ModelDefinitionToModel[rel.Target]
+		// 		} else {
+		// 			to = b.ModelDefinitionToModel[rel.Source]
+		// 		}
+		// 		methodName := fmt.Sprintf("Add%sTo%s", to.Struct.Name, on.Struct.Name)
+		// 		f := &model.Function{
+		// 			Name: methodName,
+		// 			Args: []*model.Param{
+		// 				{
+		// 					Name: "ctx",
+		// 					Type: &model.PkgReference{
+		// 						Pkg: consts.CommonPkgs["context"],
+		// 						Reference: &model.ExternalType{
+		// 							Type: "Context",
+		// 						},
+		// 					},
+		// 				},
+		// 				{
+		// 					Name: "request",
+		// 					Type: &model.PointerType{
+		// 						Type: &model.PkgReference{
+		// 							Pkg:       b.Domain.Architecture.UsecasePkg,
+		// 							Reference: &model.ExternalType{Type: fmt.Sprintf("%sRequest", methodName)},
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 			Results: []*model.Param{
+		// 				{
+		// 					Name: "",
+		// 					Type: &model.PointerType{
+		// 						Type: &model.PkgReference{
+		// 							Pkg:       b.Domain.Architecture.UsecasePkg,
+		// 							Reference: &model.ExternalType{Type: fmt.Sprintf("%sResponse", methodName)},
+		// 						},
+		// 					},
+		// 				},
+		// 			},
+		// 			Content: func() (string, []*model.GoPkg) {
+		// 				pkgs := make([]*model.GoPkg, 0)
+		// 				return fmt.Sprintf("return &%sResponse{}", methodName), pkgs
+		// 			},
+		// 		}
+		// 		usecaseCRUDImpl.Methods = append(usecaseCRUDImpl.Methods, f)
+		// 	}
+		// }
 	}
 
 	b.UsecaseCRUDImpl = usecaseCRUDImpl

@@ -20,12 +20,12 @@ func (b *domainBuilder) buildUsecase(ctx context.Context, usecaseDefinition *cor
 			Name: fmt.Sprintf("%sUsecase", usecaseDefinition.Name),
 		},
 		Request: &model.Struct{Name: usecaseDefinition.Name + "Request"},
-		Result:  &model.Struct{Name: usecaseDefinition.Name + "Result"},
+		Result:  &model.Struct{Name: usecaseDefinition.Name + "Response"},
 		Roles:   usecaseDefinition.Roles,
 	}
 
 	for _, param := range usecaseDefinition.Args {
-		t, err := TypeDefinitionToType(ctx, param.Type)
+		t, err := b.TypeDefinitionToType(ctx, param.Type)
 		if err != nil {
 			b.Err = merror.Stack(err)
 			return b
@@ -95,7 +95,7 @@ func (b *domainBuilder) buildUsecase(ctx context.Context, usecaseDefinition *cor
 	}
 
 	for _, param := range usecaseDefinition.Results {
-		t, err := TypeDefinitionToType(ctx, param.Type)
+		t, err := b.TypeDefinitionToType(ctx, param.Type)
 		if err != nil {
 			b.Err = merror.Stack(err)
 			return b

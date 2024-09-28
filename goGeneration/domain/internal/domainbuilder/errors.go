@@ -27,6 +27,8 @@ var (
 
 	// ErrUnexpectedValidationRule is returned when the validation value is used but value is not of the expected type
 	ErrUnexpectedValidationRule = errors.New("unexpected validation rule: {{ rule }}")
+
+	ErrRelationDoesNotBelongToModel = errors.New("relation does not belong to model")
 )
 
 func NewErrUnknownType(t string) error {

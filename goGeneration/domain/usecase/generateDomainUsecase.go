@@ -45,6 +45,18 @@ func (g *GenerationUsecaseImpl) GenerateDomainUsecase(ctx context.Context, domai
 		return merror.Stack(err)
 	}
 
+	for _, m := range domain.ModelsV2 {
+		if err := g.Write(ctx, domain.Architecture.ModelPkg, m, path); err != nil {
+			return merror.Stack(err)
+		}
+	}
+
+	for _, port := range domain.Ports {
+		if err := g.Write(ctx, port.Pkg, port, path); err != nil {
+			return merror.Stack(err)
+		}
+	}
+
 	if err := g.WriteUsecaseValidatorInterfaceUsecase(ctx, domain, domainBuilder.GetValidator(ctx), path); err != nil {
 		return merror.Stack(err)
 	}
@@ -85,11 +97,11 @@ func (g *GenerationUsecaseImpl) GenerateDomainUsecase(ctx context.Context, domai
 		return merror.Stack(err)
 	}
 
-	for _, m := range domain.Models {
-		if err := g.WriteModelUsecase(ctx, domain, m, path); err != nil {
-			return merror.Stack(err)
-		}
-	}
+	// for _, m := range domain.Models {
+	// 	if err := g.WriteModelUsecase(ctx, domain, m, path); err != nil {
+	// 		return merror.Stack(err)
+	// 	}
+	// }
 
 	for _, r := range domain.Repositories {
 		if err := g.WriteRepositoryUsecase(ctx, domain, r, path); err != nil {

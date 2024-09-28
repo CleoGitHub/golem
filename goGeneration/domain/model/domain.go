@@ -20,4 +20,7 @@ type Domain struct {
 	Service               *Interface
 	Pagination            *Struct
 	Ordering              *Struct
+
+	ModelsV2 []*Struct
+	Ports    []*Port
 }

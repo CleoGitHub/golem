@@ -20,6 +20,9 @@ var (
 
 	// ErrRelationModelNotFound is returned when the relation model is not found
 	ErrRelationModelNotFound = errors.New("relation with model '{model}' not found")
+
+	// ErrUnknowTypeToWrite is returned when the type is unknown on write usecase call
+	ErrUnknowTypeToWrite = errors.New("unknown type to write")
 )
 
 func NewErrUnknownType(t string) error {
