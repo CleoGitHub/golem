@@ -1,50 +1,37 @@
 package usecase
 
-import (
-	"context"
-	"fmt"
-	"os"
+// func (g *GenerationUsecaseImpl) WriteGormDomainRepositoryUsecase(ctx context.Context, domain *model.Domain, domainRepository *model.Struct, path string) error {
+// 	// if file path does not exist, create it
+// 	filepath := path + "/" + domain.Architecture.GormAdapterPkg.FullName
+// 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+// 		if err := os.MkdirAll(filepath, os.ModePerm); err != nil {
+// 			return merror.Stack(err)
+// 		}
+// 	}
 
-	"github.com/cleogithub/golem-common/pkg/merror"
-	"github.com/cleogithub/golem-common/pkg/stringtool"
-	"github.com/cleogithub/golem/goGeneration/domain/consts"
-	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
-	"github.com/cleogithub/golem/goGeneration/domain/internal/stringifier"
-	"github.com/cleogithub/golem/goGeneration/domain/model"
-)
+// 	f, err := os.Create(filepath + "/" + stringtool.LowerFirstLetter(domainRepository.Name) + ".go")
+// 	if err != nil {
+// 		return merror.Stack(err)
+// 	}
+// 	defer f.Close()
 
-func (g *GenerationUsecaseImpl) WriteGormDomainRepositoryUsecase(ctx context.Context, domain *model.Domain, domainRepository *model.Struct, path string) error {
-	// if file path does not exist, create it
-	filepath := path + "/" + domain.Architecture.GormAdapterPkg.FullName
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath, os.ModePerm); err != nil {
-			return merror.Stack(err)
-		}
-	}
+// 	pkgManager := &gopkgmanager.GoPkgManager{
+// 		Pkg: domain.Architecture.GormAdapterPkg.ShortName,
+// 	}
 
-	f, err := os.Create(filepath + "/" + stringtool.LowerFirstLetter(domainRepository.Name) + ".go")
-	if err != nil {
-		return merror.Stack(err)
-	}
-	defer f.Close()
+// 	str, err := stringifier.StringifyStructUsecase(ctx, pkgManager, domainRepository)
+// 	if err != nil {
+// 		return merror.Stack(err)
+// 	}
 
-	pkgManager := &gopkgmanager.GoPkgManager{
-		Pkg: domain.Architecture.GormAdapterPkg.ShortName,
-	}
+// 	str += fmt.Sprintf("var _ %s.%s = &%s{}", domain.Architecture.RepositoryPkg.Alias, domain.DomainRepository.Name, domainRepository.Name)
+// 	pkgManager.ImportPkg(domain.Architecture.RepositoryPkg)
 
-	str, err := stringifier.StringifyStructUsecase(ctx, pkgManager, domainRepository)
-	if err != nil {
-		return merror.Stack(err)
-	}
+// 	str = pkgManager.ToString() + consts.LN + str
+// 	_, err = f.WriteString(str)
+// 	if err != nil {
+// 		return merror.Stack(err)
+// 	}
 
-	str += fmt.Sprintf("var _ %s.%s = &%s{}", domain.Architecture.RepositoryPkg.Alias, domain.DomainRepository.Name, domainRepository.Name)
-	pkgManager.ImportPkg(domain.Architecture.RepositoryPkg)
-
-	str = pkgManager.ToString() + consts.LN + str
-	_, err = f.WriteString(str)
-	if err != nil {
-		return merror.Stack(err)
-	}
-
-	return nil
-}
+// 	return nil
+// }

@@ -1,7 +1,8 @@
 package model
 
 type Function struct {
-	// Context *Struct
+	On      Type
+	OnName  string
 	Name    string
 	Args    []*Param
 	Results []*Param

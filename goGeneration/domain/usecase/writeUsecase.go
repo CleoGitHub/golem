@@ -42,7 +42,7 @@ func (g *GenerationUsecaseImpl) Write(ctx context.Context, inPkg *model.GoPkg, e
 		}
 
 		name = t.Name
-	case *model.Port:
+	case *model.File:
 		str, err = stringifier.StringifyPortUsecase(ctx, pkgManager, t)
 		if err != nil {
 			return merror.Stack(err)

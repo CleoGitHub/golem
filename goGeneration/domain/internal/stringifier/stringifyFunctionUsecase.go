@@ -16,7 +16,12 @@ func StringifyFunctionUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPk
 		return "", merror.Stack(err)
 	}
 
-	str := fmt.Sprintf("func %s {", def) + consts.LN
+	on := ""
+	if function.On != nil {
+		on = fmt.Sprintf("(%s %s)", function.OnName, function.On.GetType(model.InPkg(pkgManager.Pkg)))
+	}
+
+	str := fmt.Sprintf("func %s %s {", on, def) + consts.LN
 	s, pkgs := function.Content()
 	for _, pkg := range pkgs {
 		if err := pkgManager.ImportPkg(pkg); err != nil {

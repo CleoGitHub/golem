@@ -12,7 +12,7 @@ func StringifyTypeUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgMan
 	types := []model.Type{t}
 	types = append(types, t.SubTypes()...)
 	for _, subType := range types {
-		if pkgReference, ok := subType.(*model.PkgReference); ok && pkgManager.Pkg != pkgReference.Pkg.Alias {
+		if pkgReference, ok := subType.(*model.PkgReference); ok {
 			pkgManager.ImportPkg(pkgReference.Pkg)
 		}
 	}

@@ -489,8 +489,10 @@ func (b *domainBuilder) buildGormAdpater(ctx context.Context) *domainBuilder {
 				Results: []*model.Param{
 					{
 						Type: &model.PkgReference{
-							Pkg:       b.Domain.Architecture.RepositoryPkg,
-							Reference: b.Domain.RepositoryTransaction,
+							Pkg: b.Domain.Architecture.RepositoryPkg,
+							Reference: &model.ExternalType{
+								Type: TRANSACTION_NAME,
+							},
 						},
 					},
 				},

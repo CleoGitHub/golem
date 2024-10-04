@@ -7,80 +7,88 @@ import (
 	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
-func (b *domainBuilder) GetTransation(ctx context.Context) *model.Interface {
-	if b.Err != nil {
-		return nil
-	}
+const (
+	TRANSACTION_NAME     = "Transaction"
+	TRANSACTION_GET      = "Get"
+	TRANSACTION_COMMIT   = "Commit"
+	TRANSACTION_ROLLBACK = "Rollback"
+)
 
-	if b.Transaction != nil {
-		return b.Transaction
-	}
-
-	transtactionIntf := &model.Interface{
-		Name: "Transaction",
-		Methods: []*model.Function{
-			{
-				Name: "Get",
-				Args: []*model.Param{
-					{
-						Name: "ctx",
-						Type: &model.PkgReference{
-							Pkg: consts.CommonPkgs["context"],
-							Reference: &model.ExternalType{
-								Type: "Context",
-							},
+var TRANSACTION = &model.Interface{
+	Name: TRANSACTION_NAME,
+	Methods: []*model.Function{
+		{
+			Name: TRANSACTION_GET,
+			Args: []*model.Param{
+				{
+					Name: "ctx",
+					Type: &model.PkgReference{
+						Pkg: consts.CommonPkgs["context"],
+						Reference: &model.ExternalType{
+							Type: "Context",
 						},
-					},
-				},
-				Results: []*model.Param{
-					{
-						Type: model.PrimitiveTypeInterface,
 					},
 				},
 			},
-			{
-				Name: "Commit",
-				Args: []*model.Param{
-					{
-						Name: "ctx",
-						Type: &model.PkgReference{
-							Pkg: consts.CommonPkgs["context"],
-							Reference: &model.ExternalType{
-								Type: "Context",
-							},
-						},
-					},
-				},
-				Results: []*model.Param{
-					{
-						Type: model.PrimitiveTypeError,
-					},
-				},
-			},
-			{
-				Name: "Rollback",
-				Args: []*model.Param{
-					{
-						Name: "ctx",
-						Type: &model.PkgReference{
-							Pkg: consts.CommonPkgs["context"],
-							Reference: &model.ExternalType{
-								Type: "Context",
-							},
-						},
-					},
-				},
-				Results: []*model.Param{
-					{
-						Type: model.PrimitiveTypeError,
-					},
+			Results: []*model.Param{
+				{
+					Type: model.PrimitiveTypeInterface,
 				},
 			},
 		},
+		{
+			Name: TRANSACTION_COMMIT,
+			Args: []*model.Param{
+				{
+					Name: "ctx",
+					Type: &model.PkgReference{
+						Pkg: consts.CommonPkgs["context"],
+						Reference: &model.ExternalType{
+							Type: "Context",
+						},
+					},
+				},
+			},
+			Results: []*model.Param{
+				{
+					Type: model.PrimitiveTypeError,
+				},
+			},
+		},
+		{
+			Name: TRANSACTION_ROLLBACK,
+			Args: []*model.Param{
+				{
+					Name: "ctx",
+					Type: &model.PkgReference{
+						Pkg: consts.CommonPkgs["context"],
+						Reference: &model.ExternalType{
+							Type: "Context",
+						},
+					},
+				},
+			},
+			Results: []*model.Param{
+				{
+					Type: model.PrimitiveTypeError,
+				},
+			},
+		},
+	},
+}
+
+func (b *domainBuilder) addTransaction(ctx context.Context) *domainBuilder {
+	if b.Err != nil {
+		return b
 	}
 
-	b.Transaction = transtactionIntf
-	b.Domain.RepositoryTransaction = transtactionIntf
+	b.Domain.Ports = append(b.Domain.Ports, &model.File{
+		Name: TRANSACTION_NAME,
+		Pkg:  b.GetRepositoryPackage(),
+		Elements: []interface{}{
+			TRANSACTION,
+		},
+	})
 
-	return transtactionIntf
+	return b
 }

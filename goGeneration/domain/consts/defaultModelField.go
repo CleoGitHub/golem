@@ -15,8 +15,8 @@ var DefaultModelFields = []*coredomaindefinition.Field{
 		Name: "updatedAt",
 		Type: coredomaindefinition.PrimitiveTypeDateTime,
 	},
-	{
-		Name: "deletedAt",
-		Type: coredomaindefinition.PrimitiveTypeDateTime,
-	},
+	// {
+	// 	Name: "deletedAt",
+	// 	Type: coredomaindefinition.PrimitiveTypeDateTime,
+	// },
 }

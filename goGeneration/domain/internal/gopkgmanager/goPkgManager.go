@@ -33,6 +33,10 @@ func (g *GoPkgManager) ImportPkg(goPkg *model.GoPkg) error {
 	if g.Imports == nil {
 		g.Imports = make(map[string]*model.GoPkg)
 	}
+
+	if goPkg.Alias == g.Pkg {
+		return nil
+	}
 	// Check if goPkg is already imported
 	if _, ok := g.Imports[goPkg.Alias]; !ok {
 		g.Imports[goPkg.FullName] = goPkg

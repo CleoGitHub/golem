@@ -255,8 +255,10 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 		usecase.Request.Fields = append(usecase.Request.Fields, &model.Field{
 			Name: "Ordering",
 			Type: &model.PkgReference{
-				Pkg:       b.Domain.Architecture.RepositoryPkg,
-				Reference: b.GetOrdering(ctx),
+				Pkg: b.Domain.Architecture.RepositoryPkg,
+				Reference: &model.ExternalType{
+					Type: ORDERING_NAME,
+				},
 			},
 			Tags: []*model.Tag{
 				{
@@ -269,8 +271,10 @@ func (b *domainBuilder) buildCRUD(ctx context.Context, crudDefinition *coredomai
 		usecase.Request.Fields = append(usecase.Request.Fields, &model.Field{
 			Name: "Pagination",
 			Type: &model.PkgReference{
-				Pkg:       b.Domain.Architecture.RepositoryPkg,
-				Reference: b.GetPagination(ctx),
+				Pkg: b.Domain.Architecture.RepositoryPkg,
+				Reference: &model.ExternalType{
+					Type: PAGINATION_NAME,
+				},
 			},
 			Tags: []*model.Tag{
 				{

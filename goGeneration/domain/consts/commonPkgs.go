@@ -28,6 +28,11 @@ var CommonPkgs = map[string]*model.GoPkg{
 		ShortName: "json",
 		FullName:  "encoding/json",
 	},
+	"reflect": {
+		Alias:     "reflect",
+		ShortName: "reflect",
+		FullName:  "reflect",
+	},
 	"uuid": {
 		Alias:     "uuid",
 		ShortName: "uuid",

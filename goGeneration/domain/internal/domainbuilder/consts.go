@@ -1,6 +1,9 @@
 package domainbuilder
 
+// const (
+// 	REPOSITORY_TRANSATION = "Transaction"
+// )
+
 const (
-	REPOSITORY_TRANSATION = "Transaction"
-	REPOSITORY_WHERE      = "Where"
+	ACTIVE_FIELD_NAME = "Active"
 )

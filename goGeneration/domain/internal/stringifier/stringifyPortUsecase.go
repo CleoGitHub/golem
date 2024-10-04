@@ -10,8 +10,9 @@ import (
 	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
-func StringifyPortUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgManager, port *model.Port) (string, error) {
+func StringifyPortUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgManager, port *model.File) (string, error) {
 	str := ""
+	pkgManager.Pkg = port.Pkg.Alias
 	for _, port := range port.Elements {
 		switch t := port.(type) {
 		case *model.Consts:
@@ -56,8 +57,14 @@ func StringifyPortUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgMan
 				return "", merror.Stack(err)
 			}
 			str += s + consts.LN
+		case *model.Enum:
+			s, err := StringifyEnumUsecase(ctx, pkgManager, t)
+			if err != nil {
+				return "", merror.Stack(err)
+			}
+			str += s + consts.LN
 		default:
-			return "", merror.Stack(fmt.Errorf("unexpected type %T in Port", t))
+			return "", merror.Stack(fmt.Errorf("unexpected type %T in File", t))
 		}
 	}
 

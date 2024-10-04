@@ -1,6 +1,6 @@
 package model
 
-type Port struct {
+type File struct {
 	Name string
 
 	Elements []interface{}

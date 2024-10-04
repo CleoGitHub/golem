@@ -1,124 +1,115 @@
 package domainbuilder
 
-import (
-	"context"
-	"slices"
+// func (b *domainBuilder) buildModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) *domainBuilder {
+// 	if b.Err != nil {
+// 		return b
+// 	}
 
-	"github.com/cleogithub/golem-common/pkg/merror"
-	"github.com/cleogithub/golem/coredomaindefinition"
-	"github.com/cleogithub/golem/goGeneration/domain/model"
-)
+// 	m := &model.Model{
+// 		JsonName: modelDefinition.Name,
+// 		Struct: &model.Struct{
+// 			Name:   GetModelName(ctx, modelDefinition),
+// 			Fields: []*model.Field{},
+// 		},
+// 		Activable: modelDefinition.Activable,
+// 	}
 
-func (b *domainBuilder) buildModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) *domainBuilder {
-	if b.Err != nil {
-		return b
-	}
+// 	b.ModelUsecaseStruct[m] = &model.Struct{}
 
-	m := &model.Model{
-		JsonName: modelDefinition.Name,
-		Struct: &model.Struct{
-			Name:   GetModelName(ctx, modelDefinition),
-			Fields: []*model.Field{},
-		},
-		Activable: modelDefinition.Activable,
-	}
+// 	modelFieldNames := []string{}
+// 	for _, f := range b.DefaultModelFields {
+// 		modelFieldNames = append(modelFieldNames, f.Name)
+// 		field, err := b.FieldDefinitionToField(ctx, f)
+// 		if err != nil {
+// 			b.Err = merror.Stack(err)
+// 			return b
+// 		}
+// 		m.Struct.Fields = append(m.Struct.Fields, field)
+// 	}
 
-	b.ModelUsecaseStruct[m] = &model.Struct{}
+// 	// Add activable field if model is activable
+// 	if modelDefinition.Activable {
+// 		field, err := b.FieldDefinitionToField(ctx, &coredomaindefinition.Field{
+// 			Name: "active",
+// 			Type: coredomaindefinition.PrimitiveTypeBool,
+// 		})
+// 		if err != nil {
+// 			b.Err = merror.Stack(err)
+// 			return b
+// 		}
+// 		m.Struct.Fields = append(m.Struct.Fields, field)
 
-	modelFieldNames := []string{}
-	for _, f := range b.DefaultModelFields {
-		modelFieldNames = append(modelFieldNames, f.Name)
-		field, err := b.FieldDefinitionToField(ctx, f)
-		if err != nil {
-			b.Err = merror.Stack(err)
-			return b
-		}
-		m.Struct.Fields = append(m.Struct.Fields, field)
-	}
+// 		field = field.Copy()
+// 		b.ModelUsecaseStruct[m].Fields = append(b.ModelUsecaseStruct[m].Fields, field)
+// 	}
 
-	// Add activable field if model is activable
-	if modelDefinition.Activable {
-		field, err := b.FieldDefinitionToField(ctx, &coredomaindefinition.Field{
-			Name: "active",
-			Type: coredomaindefinition.PrimitiveTypeBool,
-		})
-		if err != nil {
-			b.Err = merror.Stack(err)
-			return b
-		}
-		m.Struct.Fields = append(m.Struct.Fields, field)
+// 	// Add default fields to definition
+// 	for _, field := range modelDefinition.Fields {
+// 		if slices.Contains(modelFieldNames, field.Name) {
+// 			b.Err = merror.Stack(NewErrDefaultFiedlRedefined(field.Name))
+// 			return b
+// 		}
+// 		f, err := b.FieldDefinitionToField(ctx, field)
+// 		if err != nil {
+// 			b.Err = merror.Stack(err)
+// 			return b
+// 		}
+// 		m.Struct.Fields = append(m.Struct.Fields, f)
+// 		b.FieldToValidationRules[f] = field.Validations
 
-		field = field.Copy()
-		b.ModelUsecaseStruct[m].Fields = append(b.ModelUsecaseStruct[m].Fields, field)
-	}
+// 		f = f.Copy()
+// 		validationsValues := []string{}
 
-	// Add default fields to definition
-	for _, field := range modelDefinition.Fields {
-		if slices.Contains(modelFieldNames, field.Name) {
-			b.Err = merror.Stack(NewErrDefaultFiedlRedefined(field.Name))
-			return b
-		}
-		f, err := b.FieldDefinitionToField(ctx, field)
-		if err != nil {
-			b.Err = merror.Stack(err)
-			return b
-		}
-		m.Struct.Fields = append(m.Struct.Fields, f)
-		b.FieldToValidationRules[f] = field.Validations
+// 		for _, validation := range field.Validations {
+// 			switch validation.Rule {
+// 			case coredomaindefinition.ValidationRuleRequired:
+// 				validationsValues = append(validationsValues, "required")
+// 			case coredomaindefinition.ValidationRuleEmail:
+// 				validationsValues = append(validationsValues, "email")
+// 			case coredomaindefinition.ValidationRuleUUID:
+// 				validationsValues = append(validationsValues, "uuid")
+// 			case coredomaindefinition.ValidationRuleHexColor:
+// 				validationsValues = append(validationsValues, "hexcolor")
+// 			case coredomaindefinition.ValidationRuleGT:
+// 				if s, ok := validation.Value.(string); ok {
+// 					validationsValues = append(validationsValues, "gt:"+s)
+// 				} else {
+// 					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
+// 				}
+// 			case coredomaindefinition.ValidationRuleGTE:
+// 				if s, ok := validation.Value.(string); ok {
+// 					validationsValues = append(validationsValues, "gte:"+s)
+// 				} else {
+// 					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
+// 				}
+// 			case coredomaindefinition.ValidationRuleLT:
+// 				if s, ok := validation.Value.(string); ok {
+// 					validationsValues = append(validationsValues, "lt:"+s)
+// 				} else {
+// 					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
+// 				}
+// 			case coredomaindefinition.ValidationRuleLTE:
+// 				if s, ok := validation.Value.(string); ok {
+// 					validationsValues = append(validationsValues, "lte:"+s)
+// 				} else {
+// 					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
+// 				}
+// 			}
+// 		}
 
-		f = f.Copy()
-		validationsValues := []string{}
+// 		if len(validationsValues) > 0 {
+// 			f.Tags = append(f.Tags, &model.Tag{
+// 				Name:   "validate",
+// 				Values: validationsValues,
+// 			})
+// 		}
 
-		for _, validation := range field.Validations {
-			switch validation.Rule {
-			case coredomaindefinition.ValidationRuleRequired:
-				validationsValues = append(validationsValues, "required")
-			case coredomaindefinition.ValidationRuleEmail:
-				validationsValues = append(validationsValues, "email")
-			case coredomaindefinition.ValidationRuleUUID:
-				validationsValues = append(validationsValues, "uuid")
-			case coredomaindefinition.ValidationRuleHexColor:
-				validationsValues = append(validationsValues, "hexcolor")
-			case coredomaindefinition.ValidationRuleGT:
-				if s, ok := validation.Value.(string); ok {
-					validationsValues = append(validationsValues, "gt:"+s)
-				} else {
-					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
-				}
-			case coredomaindefinition.ValidationRuleGTE:
-				if s, ok := validation.Value.(string); ok {
-					validationsValues = append(validationsValues, "gte:"+s)
-				} else {
-					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
-				}
-			case coredomaindefinition.ValidationRuleLT:
-				if s, ok := validation.Value.(string); ok {
-					validationsValues = append(validationsValues, "lt:"+s)
-				} else {
-					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
-				}
-			case coredomaindefinition.ValidationRuleLTE:
-				if s, ok := validation.Value.(string); ok {
-					validationsValues = append(validationsValues, "lte:"+s)
-				} else {
-					b.Err = NewErrValidationValueExpectedType(string(validation.Rule), "string")
-				}
-			}
-		}
+// 		b.ModelUsecaseStruct[m].Fields = append(b.ModelUsecaseStruct[m].Fields, f)
+// 	}
 
-		if len(validationsValues) > 0 {
-			f.Tags = append(f.Tags, &model.Tag{
-				Name:   "validate",
-				Values: validationsValues,
-			})
-		}
+// 	b.ModelDefinitionToModel[modelDefinition] = m
+// 	b.ModelToModelDefinition[m] = modelDefinition
+// 	b.Domain.Models = append(b.Domain.Models, m)
 
-		b.ModelUsecaseStruct[m].Fields = append(b.ModelUsecaseStruct[m].Fields, f)
-	}
-
-	b.ModelDefinitionToModel[modelDefinition] = m
-	b.ModelToModelDefinition[m] = modelDefinition
-	b.Domain.Models = append(b.Domain.Models, m)
-
-	return b
-}
+// 	return b
+// }

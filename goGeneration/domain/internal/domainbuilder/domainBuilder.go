@@ -23,8 +23,9 @@ type domainBuilder struct {
 	// if error happened during build, error is returned on Build method
 	Err error
 
-	ModelBuilders      []*ModelBuilder
-	RepositoryBuilders []*RepositoryBuilder
+	ModelBuilders          []*ModelBuilder
+	RepositoryBuilders     []*RepositoryBuilder
+	GormRepositoryBuilders []*GormRepositoryBuilder
 
 	// Store definition to build in order to build in normal order but call it in disered order
 	ModelDefinitionsToBuild      []*coredomaindefinition.Model
@@ -33,13 +34,13 @@ type domainBuilder struct {
 	CRUDToBuild                  []*coredomaindefinition.CRUD
 	UsecaseDefinitionsToBuild    []*coredomaindefinition.Usecase
 
-	// Store definition to model
+	// // Store definition to model
 	ModelDefinitionToModel           map[*coredomaindefinition.Model]*model.Model
 	ModelToModelDefinition           map[*model.Model]*coredomaindefinition.Model
 	RepositoryDefinitionToRepository map[*coredomaindefinition.Repository]*model.Repository
-	UsecaseDefinitionToUsecase       map[*coredomaindefinition.Usecase]*model.Usecase
-	RelationToRelationDefinition     map[*model.Relation]*coredomaindefinition.Relation
-	ModelToRepository                map[*model.Model]*model.Repository
+	// UsecaseDefinitionToUsecase       map[*coredomaindefinition.Usecase]*model.Usecase
+	RelationToRelationDefinition map[*model.Relation]*coredomaindefinition.Relation
+	ModelToRepository            map[*model.Model]*model.Repository
 	// RepoToDomainRepoGetEntityRepoMethod map[*model.Repository]*model.Function
 	ModelToGormModel map[*model.Model]*model.GormModel
 	Domain           *model.Domain
@@ -52,113 +53,133 @@ type domainBuilder struct {
 	Transaction      *model.Interface
 	RepositoryErrors map[string]*model.Var
 
-	// Usecase elements
-	DomainUsecase              *model.Interface
-	UsecaseCRUDImpl            *model.Struct
+	// // Usecase elements
+	DomainUsecase *model.Interface
+	// UsecaseCRUDImpl            *model.Struct
 	FieldToParamUsecaseRequest map[*model.Field]*coredomaindefinition.Param
 	CRUDActionToUsecase        map[*coredomaindefinition.CRUDAction]*model.Usecase
 	FieldToValidationRules     map[*model.Field][]*coredomaindefinition.Validation
-	CRUDCreateRequest          map[*model.Model]*model.Struct
-	CRUDUpdateRequest          map[*model.Model]*model.Struct
-	CRUDDeleteRequest          map[*model.Model]*model.Struct
-	CRUDGetRequest             map[*model.Model]*model.Struct
-	CRUDListRequest            map[*model.Model]*model.Struct
+	// CRUDCreateRequest          map[*model.Model]*model.Struct
+	// CRUDUpdateRequest          map[*model.Model]*model.Struct
+	// CRUDDeleteRequest          map[*model.Model]*model.Struct
+	// CRUDGetRequest             map[*model.Model]*model.Struct
+	// CRUDListRequest            map[*model.Model]*model.Struct
 
 	ModelUsecaseStruct map[*model.Model]*model.Struct
 
-	// Validator of struct request
+	// // Validator of struct request
 	Validator            *model.Interface
 	UsecaseValidatorImpl *model.Struct
+
+	RelationGraph *RelationGraph
+
+	GormDomainRepositoryBuilder *GormDomainRepositoryBuilder
+
+	builders []Builder
 }
 
 func NewDomainBuilder(
-	d *coredomaindefinition.Domain,
+	ctx context.Context,
+	definition *coredomaindefinition.Domain,
 	defaultModelFields []*coredomaindefinition.Field,
 ) *domainBuilder {
-	return &domainBuilder{
-		Definition:                       d,
-		DefaultModelFields:               defaultModelFields,
-		RepositoryDefinitionToRepository: map[*coredomaindefinition.Repository]*model.Repository{},
-		RelationToRelationDefinition:     map[*model.Relation]*coredomaindefinition.Relation{},
-		Models:                           []*model.Model{},
-		Repositories:                     []*model.Repository{},
-		ModelDefinitionToModel:           map[*coredomaindefinition.Model]*model.Model{},
-		ModelToModelDefinition:           map[*model.Model]*coredomaindefinition.Model{},
-		ModelUsecaseStruct:               map[*model.Model]*model.Struct{},
-		FieldToParamUsecaseRequest:       map[*model.Field]*coredomaindefinition.Param{},
-		CRUDActionToUsecase:              map[*coredomaindefinition.CRUDAction]*model.Usecase{},
-		ModelToRepository:                map[*model.Model]*model.Repository{},
+	builder := &domainBuilder{
+		Definition:         definition,
+		DefaultModelFields: defaultModelFields,
+
+		// RepositoryDefinitionToRepository: map[*coredomaindefinition.Repository]*model.Repository{},
+		RelationToRelationDefinition: map[*model.Relation]*coredomaindefinition.Relation{},
+		ModelDefinitionToModel:       map[*coredomaindefinition.Model]*model.Model{},
+		ModelToModelDefinition:       map[*model.Model]*coredomaindefinition.Model{},
+		ModelUsecaseStruct:           map[*model.Model]*model.Struct{},
+		FieldToParamUsecaseRequest:   map[*model.Field]*coredomaindefinition.Param{},
+		CRUDActionToUsecase:          map[*coredomaindefinition.CRUDAction]*model.Usecase{},
+		// ModelToRepository:                map[*model.Model]*model.Repository{},
 		// RepoToDomainRepoGetEntityRepoMethod: map[*model.Repository]*model.Function{},
-		RepositoryErrors:       map[string]*model.Var{},
+		// RepositoryErrors:       map[string]*model.Var{},
 		FieldToValidationRules: map[*model.Field][]*coredomaindefinition.Validation{},
-		ModelToGormModel:       map[*model.Model]*model.GormModel{},
+		// ModelToGormModel:       map[*model.Model]*model.GormModel{},
+		RelationGraph: &RelationGraph{},
 
 		Domain: &model.Domain{
-			Name: d.Name,
-			Architecture: &model.Architecture{
-				ModelPkg: &model.GoPkg{
-					ShortName: "model",
-					Alias:     "model",
-					FullName: fmt.Sprintf(
-						"%s/domain/model",
-						d.Name,
-					),
-				},
-				RepositoryPkg: &model.GoPkg{
-					ShortName: "repository",
-					Alias:     "repository",
-					FullName: fmt.Sprintf(
-						"%s/domain/port/repository",
-						d.Name,
-					),
-				},
-				UsecasePkg: &model.GoPkg{
-					ShortName: "usecase",
-					Alias:     "usecase",
-					FullName: fmt.Sprintf(
-						"%s/domain/usecase",
-						d.Name,
-					),
-				},
-				ControllerPkg: &model.GoPkg{
-					ShortName: "controller",
-					Alias:     "controller",
-					FullName: fmt.Sprintf(
-						"%s/adapter/controller",
-						d.Name,
-					),
-				},
-				GormAdapterPkg: &model.GoPkg{
-					ShortName: "gormadapter",
-					Alias:     "gormadapter",
-					FullName: fmt.Sprintf(
-						"%s/adapter/repository/gormadapter",
-						d.Name,
-					),
-				},
-				SdkPkg: &model.GoPkg{
-					ShortName: "client",
-					Alias:     "client",
-					FullName: fmt.Sprintf(
-						"%s/sdk/client",
-						d.Name,
-					),
-				},
-				JavascriptClient: fmt.Sprintf(
-					"%s/sdk/JS",
-					d.Name,
-				),
-			},
+			Name: definition.Name,
 		},
 	}
+	builder.setArchitecture(ctx)
+
+	builder.builders = append(builder.builders, NewGormDomainRepositoryBuilder(ctx, builder, builder.Definition))
+
+	return builder
 }
 
-func (domainBuilder *domainBuilder) NewModelBuilder(ctx context.Context, modelDefinition *coredomaindefinition.Model) *ModelBuilder {
+func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilder {
+	builder.Domain.Architecture = &model.Architecture{
+		ModelPkg: &model.GoPkg{
+			ShortName: "model",
+			Alias:     "model",
+			FullName: fmt.Sprintf(
+				"%s/domain/model",
+				builder.Definition.Name,
+			),
+		},
+		RepositoryPkg: &model.GoPkg{
+			ShortName: "repository",
+			Alias:     "repository",
+			FullName: fmt.Sprintf(
+				"%s/domain/port/repository",
+				builder.Definition.Name,
+			),
+		},
+		UsecasePkg: &model.GoPkg{
+			ShortName: "usecase",
+			Alias:     "usecase",
+			FullName: fmt.Sprintf(
+				"%s/domain/usecase",
+				builder.Definition.Name,
+			),
+		},
+		ControllerPkg: &model.GoPkg{
+			ShortName: "controller",
+			Alias:     "controller",
+			FullName: fmt.Sprintf(
+				"%s/adapter/controller",
+				builder.Definition.Name,
+			),
+		},
+		GormAdapterPkg: &model.GoPkg{
+			ShortName: "gormadapter",
+			Alias:     "gormadapter",
+			FullName: fmt.Sprintf(
+				"%s/adapter/repository/gormadapter",
+				builder.Definition.Name,
+			),
+		},
+		SdkPkg: &model.GoPkg{
+			ShortName: "client",
+			Alias:     "client",
+			FullName: fmt.Sprintf(
+				"%s/sdk/client",
+				builder.Definition.Name,
+			),
+		},
+		JavascriptClient: fmt.Sprintf(
+			"%s/sdk/JS",
+			builder.Definition.Name,
+		),
+	}
+	return builder
+}
+
+func (domainBuilder *domainBuilder) NewModelBuilder(ctx context.Context, modelDefinition *coredomaindefinition.Model) Builder {
 	return NewModelBuilder(ctx, domainBuilder, modelDefinition, domainBuilder.DefaultModelFields)
 }
 
-func (domainBuilder *domainBuilder) NewRepositoryBuilder(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) *RepositoryBuilder {
+func (domainBuilder *domainBuilder) NewRepositoryBuilder(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) Builder {
 	return NewRepositoryBuilder(ctx, domainBuilder, repositoryDefinition)
+}
+
+func (domainBuilder *domainBuilder) NewGormRepositoryBuilder(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) Builder {
+	return NewGormRepositoryBuilder(ctx, domainBuilder, repositoryDefinition)
 }
 
 func (domainBuilder *domainBuilder) GetModelPackage() *model.GoPkg {
@@ -185,98 +206,100 @@ func (domainBuilder *domainBuilder) GetSdkPackage() *model.GoPkg {
 	return domainBuilder.Domain.Architecture.SdkPkg
 }
 
-func (b *domainBuilder) GetModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) (*model.Model, error) {
-	if m, ok := b.ModelDefinitionToModel[modelDefinition]; ok {
+func (builder *domainBuilder) GetModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) (*model.Model, error) {
+	if m, ok := builder.ModelDefinitionToModel[modelDefinition]; ok {
 		return m, nil
 	}
 	return nil, NewErrModelNotFound(modelDefinition.Name)
 }
 
-func (b *domainBuilder) WithModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) *domainBuilder {
-	if b.Err != nil {
-		return b
+func (builder *domainBuilder) WithModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) *domainBuilder {
+	if builder.Err != nil {
+		return builder
 	}
 
-	b.ModelDefinitionsToBuild = append(b.ModelDefinitionsToBuild, modelDefinition)
+	builder.builders = append(builder.builders, builder.NewModelBuilder(ctx, modelDefinition))
 
-	return b
+	builder.ModelDefinitionsToBuild = append(builder.ModelDefinitionsToBuild, modelDefinition)
+
+	return builder
 }
 
-func (b *domainBuilder) WithRepository(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) *domainBuilder {
-	if b.Err != nil {
-		return b
+func (builder *domainBuilder) WithRepository(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) *domainBuilder {
+	if builder.Err != nil {
+		return builder
 	}
 
-	b.RepositoryDefinitionsToBuild = append(b.RepositoryDefinitionsToBuild, repositoryDefinition)
+	builder.builders = append(builder.builders, builder.NewRepositoryBuilder(ctx, repositoryDefinition))
+	builder.builders = append(builder.builders, builder.NewGormRepositoryBuilder(ctx, repositoryDefinition))
 
-	return b
+	builder.RepositoryDefinitionsToBuild = append(builder.RepositoryDefinitionsToBuild, repositoryDefinition)
+
+	return builder
 }
 
-func (b *domainBuilder) WithRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) *domainBuilder {
-	if b.Err != nil {
-		return b
+func (builder *domainBuilder) WithRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) *domainBuilder {
+	if builder.Err != nil {
+		return builder
 	}
 
-	b.RelationDefinitionsToBuild = append(b.RelationDefinitionsToBuild, relationDefinition)
+	builder.RelationDefinitionsToBuild = append(builder.RelationDefinitionsToBuild, relationDefinition)
+	builder.RelationGraph.addRelationToGraph(ctx, relationDefinition)
 
-	return b
+	return builder
 }
 
-func (b *domainBuilder) WithCRUD(ctx context.Context, crudDefinition *coredomaindefinition.CRUD) *domainBuilder {
-	if b.Err != nil {
-		return b
+func (builder *domainBuilder) WithCRUD(ctx context.Context, crudDefinition *coredomaindefinition.CRUD) *domainBuilder {
+	if builder.Err != nil {
+		return builder
 	}
 
-	b.CRUDToBuild = append(b.CRUDToBuild, crudDefinition)
+	builder.CRUDToBuild = append(builder.CRUDToBuild, crudDefinition)
 
-	return b
+	return builder
 }
 
-func (b *domainBuilder) WithUsecase(ctx context.Context, usecaseDefinition *coredomaindefinition.Usecase) *domainBuilder {
-	if b.Err != nil {
-		return b
+func (builder *domainBuilder) WithUsecase(ctx context.Context, usecaseDefinition *coredomaindefinition.Usecase) *domainBuilder {
+	if builder.Err != nil {
+		return builder
 	}
 
-	b.UsecaseDefinitionsToBuild = append(b.UsecaseDefinitionsToBuild, usecaseDefinition)
+	builder.UsecaseDefinitionsToBuild = append(builder.UsecaseDefinitionsToBuild, usecaseDefinition)
 
-	return b
+	return builder
 }
 
-func (b *domainBuilder) Build(ctx context.Context) (*model.Domain, error) {
-	if b.Err != nil {
-		return nil, b.Err
+func (builder *domainBuilder) Build(ctx context.Context) (*model.Domain, error) {
+	if builder.Err != nil {
+		return nil, builder.Err
 	}
 
-	b.buildRepositoryErrors(ctx)
+	builder.addRepositoryErrors(ctx)
+	builder.addPagination(ctx)
+	builder.addTransaction(ctx)
+	builder.addOrdering(ctx)
 
-	for _, modelDefinition := range b.ModelDefinitionsToBuild {
-		b.ModelBuilders = append(b.ModelBuilders, b.NewModelBuilder(ctx, modelDefinition))
-		b.buildModel(ctx, modelDefinition)
-	}
-	b.buildDomainRepository(ctx)
-	for _, repositoryDefinition := range b.RepositoryDefinitionsToBuild {
-		b.RepositoryBuilders = append(b.RepositoryBuilders, b.NewRepositoryBuilder(ctx, repositoryDefinition))
-		b.buildRepository(ctx, repositoryDefinition)
-	}
-	for _, relationDefinition := range b.RelationDefinitionsToBuild {
-		for _, modelBuilder := range b.ModelBuilders {
-			modelBuilder.WithRelation(ctx, relationDefinition)
+	builder.builders = append(builder.builders, NewGormDomainRepositoryBuilder(ctx, builder, builder.Definition))
+
+	for _, modelDefinition := range builder.ModelDefinitionsToBuild {
+		for _, b := range builder.builders {
+			b.WithModel(ctx, modelDefinition)
 		}
-
-		for _, repositoryBuilder := range b.RepositoryBuilders {
-			repositoryBuilder.WithRelation(ctx, relationDefinition)
+	}
+	for _, relationDefinition := range builder.RelationDefinitionsToBuild {
+		for _, b := range builder.builders {
+			b.WithRelation(ctx, relationDefinition)
 		}
-		b.buildRelation(ctx, relationDefinition)
 	}
-	for _, crudDefinition := range b.CRUDToBuild {
-		b.buildCRUD(ctx, crudDefinition)
-	}
+	// for _, crudDefinition := range builder.CRUDToBuild {
+	// 	builder.buildCRUD(ctx, crudDefinition)
+	// }
 
-	for _, usecaseDefinition := range b.UsecaseDefinitionsToBuild {
-		b.buildUsecase(ctx, usecaseDefinition)
-	}
+	// for _, usecaseDefinition := range builder.UsecaseDefinitionsToBuild {
+	// 	builder.buildUsecase(ctx, usecaseDefinition)
+	// }
 
-	for _, usecase := range b.Domain.Usecases {
+	for _, usecase := range builder.Domain.Usecases {
 		usecase.Function.Args = append(usecase.Function.Args, &model.Param{
 			Name: "ctx",
 			Type: &model.PkgReference{
@@ -290,7 +313,7 @@ func (b *domainBuilder) Build(ctx context.Context) (*model.Domain, error) {
 			Name: "request",
 			Type: &model.PointerType{
 				Type: &model.PkgReference{
-					Pkg:       b.Domain.Architecture.UsecasePkg,
+					Pkg:       builder.Domain.Architecture.UsecasePkg,
 					Reference: usecase.Request,
 				},
 			},
@@ -298,7 +321,7 @@ func (b *domainBuilder) Build(ctx context.Context) (*model.Domain, error) {
 		usecase.Function.Results = append(usecase.Function.Results, &model.Param{
 			Type: &model.PointerType{
 				Type: &model.PkgReference{
-					Pkg:       b.Domain.Architecture.UsecasePkg,
+					Pkg:       builder.Domain.Architecture.UsecasePkg,
 					Reference: usecase.Result,
 				},
 			},
@@ -306,33 +329,60 @@ func (b *domainBuilder) Build(ctx context.Context) (*model.Domain, error) {
 		usecase.Function.Results = append(usecase.Function.Results, &model.Param{
 			Type: model.PrimitiveTypeError,
 		})
-		b.GetDomainUsecase(ctx).Methods = append(b.GetDomainUsecase(ctx).Methods, usecase.Function)
+		builder.GetDomainUsecase(ctx).Methods = append(builder.GetDomainUsecase(ctx).Methods, usecase.Function)
 	}
-	b.buildUsecaseCRUDImplementation(ctx)
-	b.buildHttpController(ctx)
-	b.buildGormAdpater(ctx)
-	b.buildService(ctx)
-	b.buildHttpService(ctx)
+	// builder.buildUsecaseCRUDImplementation(ctx)
+	// builder.buildHttpController(ctx)
+	// builder.buildGormAdpater(ctx)
+	// builder.buildService(ctx)
+	// builder.buildHttpService(ctx)
 
-	for _, modelBuilder := range b.ModelBuilders {
-		m, err := modelBuilder.Build(ctx)
+	// for _, modelBuilder := range builder.ModelBuilders {
+	// 	m, err := modelBuilder.Build(ctx)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	builder.Domain.ModelsV2 = append(builder.Domain.ModelsV2, m)
+
+	// }
+
+	port, err := builder.buildRelationGraph(ctx)
+	if err != nil {
+		return nil, err
+	}
+	builder.Domain.Ports = append(builder.Domain.Ports, port)
+
+	port, err = builder.buildDomainRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
+	builder.Domain.Ports = append(builder.Domain.Ports, port)
+
+	for _, b := range builder.builders {
+		err := b.Build(ctx)
 		if err != nil {
 			return nil, err
 		}
-		b.Domain.ModelsV2 = append(b.Domain.ModelsV2, m)
 	}
 
-	for _, repositoryBuilder := range b.RepositoryBuilders {
-		m, err := repositoryBuilder.Build(ctx)
-		if err != nil {
-			return nil, err
-		}
-		b.Domain.Ports = append(b.Domain.Ports, m)
-	}
-
-	if b.Err != nil {
-		return nil, b.Err
-	}
-
-	return b.Domain, nil
+	return builder.Domain, nil
 }
+
+// func (builder *domainBuilder) buildDomainRepository(ctx context.Context) {
+// 	domainRepo := &model.Interface{
+// 		Name:    GetDomainRepositoryName(ctx, builder.Definition),
+// 		Methods: []*model.Function{},
+// 	}
+
+// 	for _, repositoryBuilder := range builder.RepositoryBuilders {
+// 		domainRepo.Methods = append(domainRepo.Methods, repositoryBuilder.Methods...)
+// 	}
+
+// 	builder.Domain.Ports = append(builder.Domain.Ports, &model.File{
+// 		Name: GetDomainRepositoryName(ctx, builder.Definition),
+// 		Pkg:  builder.GetRepositoryPackage(),
+// 		Elements: []interface{}{
+// 			domainRepo,
+// 		},
+// 	})
+// }

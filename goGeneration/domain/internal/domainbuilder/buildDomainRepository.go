@@ -3,21 +3,25 @@ package domainbuilder
 import (
 	"context"
 
-	"github.com/cleogithub/golem-common/pkg/stringtool"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
-func (b *domainBuilder) buildDomainRepository(ctx context.Context) *domainBuilder {
+const (
+	REPOSITORY_MIGRATE           = "Migrate"
+	REPOSITORY_BEGIN_TRANSACTION = "BeginTransaction"
+)
+
+func (b *domainBuilder) buildDomainRepository(ctx context.Context) (*model.File, error) {
 	if b.Err != nil {
-		return b
+		return nil, b.Err
 	}
 
 	domainRepository := &model.Interface{
-		Name: stringtool.UpperFirstLetter(b.Domain.Name) + "Repository",
+		Name: GetDomainRepositoryName(ctx, b.Definition),
 		Methods: []*model.Function{
 			{
-				Name: "Migrate",
+				Name: REPOSITORY_MIGRATE,
 				Args: []*model.Param{
 					{
 						Name: "ctx",
@@ -36,7 +40,7 @@ func (b *domainBuilder) buildDomainRepository(ctx context.Context) *domainBuilde
 				},
 			},
 			{
-				Name: "BeginTransaction",
+				Name: REPOSITORY_BEGIN_TRANSACTION,
 				Args: []*model.Param{
 					{
 						Name: "ctx",
@@ -51,16 +55,29 @@ func (b *domainBuilder) buildDomainRepository(ctx context.Context) *domainBuilde
 				Results: []*model.Param{
 					{
 						Type: &model.PkgReference{
-							Pkg:       b.Domain.Architecture.RepositoryPkg,
-							Reference: b.GetTransation(ctx),
+							Pkg: b.Domain.Architecture.RepositoryPkg,
+							Reference: &model.ExternalType{
+								Type: TRANSACTION_NAME,
+							},
 						},
+					},
+					{
+						Type: model.PrimitiveTypeError,
 					},
 				},
 			},
 		},
 	}
 
-	b.Domain.DomainRepository = domainRepository
+	for _, repositoryBuilder := range b.RepositoryBuilders {
+		domainRepository.Methods = append(domainRepository.Methods, repositoryBuilder.Methods...)
+	}
 
-	return b
+	return &model.File{
+		Name: GetDomainRepositoryName(ctx, b.Definition),
+		Pkg:  b.GetRepositoryPackage(),
+		Elements: []interface{}{
+			domainRepository,
+		},
+	}, nil
 }

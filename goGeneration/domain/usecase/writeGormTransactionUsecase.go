@@ -8,6 +8,7 @@ import (
 	"github.com/cleogithub/golem-common/pkg/merror"
 	"github.com/cleogithub/golem-common/pkg/stringtool"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/internal/domainbuilder"
 	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
 	"github.com/cleogithub/golem/goGeneration/domain/internal/stringifier"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
@@ -38,7 +39,7 @@ func (g *GenerationUsecaseImpl) WriteGormTransactionUsecase(ctx context.Context,
 	}
 	str += consts.LN
 
-	str += fmt.Sprintf(`var _ %s.%s = &%s{}`, domain.Architecture.RepositoryPkg.Alias, domain.RepositoryTransaction.Name, m.Name) + consts.LN
+	str += fmt.Sprintf(`var _ %s.%s = &%s{}`, domain.Architecture.RepositoryPkg.Alias, domainbuilder.TRANSACTION_NAME, m.Name) + consts.LN
 	pkgManager.ImportPkg(domain.Architecture.RepositoryPkg)
 
 	str = pkgManager.ToString() + consts.LN + str

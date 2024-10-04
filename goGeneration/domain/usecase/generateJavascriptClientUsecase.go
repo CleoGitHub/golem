@@ -12,6 +12,7 @@ import (
 	"github.com/cleogithub/golem-common/pkg/merror"
 	"github.com/cleogithub/golem-common/pkg/stringtool"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
+	"github.com/cleogithub/golem/goGeneration/domain/internal/domainbuilder"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
 )
 
@@ -65,9 +66,9 @@ func (g *GenerationUsecaseImpl) GenerateJavascriptClientUsecase(ctx context.Cont
 	str += "} from './index.js'" + consts.LN
 	str += consts.LN
 
-	str += structToClass(domain.Pagination, level()) + consts.LN
+	str += structToClass(domainbuilder.PAGINATION, level()) + consts.LN
 
-	str += structToClass(domain.Ordering, level()) + consts.LN
+	str += structToClass(domainbuilder.ORDERING, level()) + consts.LN
 
 	for i, usecase := range domain.Usecases {
 		str += fmt.Sprintf("// %s", strings.TrimSuffix(usecase.Function.Name, "Usecase")) + consts.LN

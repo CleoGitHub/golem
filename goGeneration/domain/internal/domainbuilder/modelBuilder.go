@@ -24,7 +24,7 @@ func NewModelBuilder(
 	domainBuilder *domainBuilder,
 	definition *coredomaindefinition.Model,
 	defaultFields []*coredomaindefinition.Field,
-) *ModelBuilder {
+) Builder {
 	builder := &ModelBuilder{
 		Definition:    definition,
 		DomainBuilder: domainBuilder,
@@ -39,6 +39,18 @@ func NewModelBuilder(
 	for _, f := range defaultFields {
 		modelFieldNames = append(modelFieldNames, f.Name)
 		field, err := builder.DomainBuilder.FieldDefinitionToField(ctx, f)
+		if err != nil {
+			builder.Err = merror.Stack(err)
+			return builder
+		}
+		builder.Model.Fields = append(builder.Model.Fields, field)
+	}
+	if definition.Archivable {
+		modelFieldNames = append(modelFieldNames, "deleted")
+		field, err := builder.DomainBuilder.FieldDefinitionToField(ctx, &coredomaindefinition.Field{
+			Name: "deletedAt",
+			Type: coredomaindefinition.PrimitiveTypeDateTime,
+		})
 		if err != nil {
 			builder.Err = merror.Stack(err)
 			return builder
@@ -77,7 +89,7 @@ func NewModelBuilder(
 	return builder
 }
 
-func (builder *ModelBuilder) WithRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) *ModelBuilder {
+func (builder *ModelBuilder) WithRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) Builder {
 	if builder.Err != nil {
 		return builder
 	}
@@ -140,6 +152,22 @@ func (builder *ModelBuilder) WithRelation(ctx context.Context, relationDefinitio
 	return builder
 }
 
-func (builder *ModelBuilder) Build(ctx context.Context) (*model.Struct, error) {
-	return builder.Model, builder.Err
+// WithModel implements Builder.
+func (builder *ModelBuilder) WithModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) Builder {
+	return builder
+}
+
+// WithRepository implements Builder.
+func (builder *ModelBuilder) WithRepository(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) Builder {
+	return builder
+}
+
+func (builder *ModelBuilder) Build(ctx context.Context) error {
+	if builder.Err != nil {
+		return builder.Err
+	}
+
+	builder.DomainBuilder.Domain.ModelsV2 = append(builder.DomainBuilder.Domain.ModelsV2, builder.Model)
+
+	return nil
 }
