@@ -14,6 +14,7 @@ import (
 
 const (
 	REPOSIOTY_METHOD_CONTEXT_OPTS_NAME = "opts"
+	REPOSITORY_ENTITY_PARAM_NAME       = "entity"
 )
 
 func GetSingleRelationColumn(ctx context.Context, m *coredomaindefinition.Model) string {
@@ -225,7 +226,7 @@ func GetRepositoryCreateSignature(ctx context.Context, repository *coredomaindef
 				},
 			},
 			{
-				Name: "entity",
+				Name: REPOSITORY_ENTITY_PARAM_NAME,
 				Type: &model.PointerType{
 					Type: &model.PkgReference{
 						Pkg: modelPkg,
@@ -257,6 +258,9 @@ func GetRepositoryCreateSignature(ctx context.Context, repository *coredomaindef
 						},
 					},
 				},
+			},
+			{
+				Type: model.PrimitiveTypeError,
 			},
 		},
 	}
@@ -277,7 +281,7 @@ func GetRepositoryUpdateSignature(ctx context.Context, repository *coredomaindef
 				},
 			},
 			{
-				Name: "entity",
+				Name: REPOSITORY_ENTITY_PARAM_NAME,
 				Type: &model.PointerType{
 					Type: &model.PkgReference{
 						Pkg: modelPkg,
@@ -309,6 +313,9 @@ func GetRepositoryUpdateSignature(ctx context.Context, repository *coredomaindef
 						},
 					},
 				},
+			},
+			{
+				Type: model.PrimitiveTypeError,
 			},
 		},
 	}
@@ -342,6 +349,11 @@ func GetRepositoryDeleteSignature(ctx context.Context, repository *coredomaindef
 						},
 					},
 				},
+			},
+		},
+		Results: []*model.Param{
+			{
+				Type: model.PrimitiveTypeError,
 			},
 		},
 	}

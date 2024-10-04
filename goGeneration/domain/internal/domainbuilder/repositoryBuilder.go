@@ -346,12 +346,19 @@ func (builder *RepositoryBuilder) addManyToManyMethods(ctx context.Context, rela
 			},
 			{
 				Name: "opts",
-				Type: &model.PointerType{
+				Type: &model.VariaidicType{
 					Type: &model.PkgReference{
-						Pkg:       builder.DomainBuilder.GetRepositoryPackage(),
-						Reference: methodCtx,
+						Pkg: builder.DomainBuilder.GetRepositoryPackage(),
+						Reference: &model.ExternalType{
+							Type: GetRepositoryMethodOptionName(ctx, methodName),
+						},
 					},
 				},
+			},
+		},
+		Results: []*model.Param{
+			{
+				Type: model.PrimitiveTypeError,
 			},
 		},
 	})
@@ -391,12 +398,19 @@ func (builder *RepositoryBuilder) addManyToManyMethods(ctx context.Context, rela
 			},
 			{
 				Name: "opts",
-				Type: &model.PointerType{
+				Type: &model.VariaidicType{
 					Type: &model.PkgReference{
-						Pkg:       builder.DomainBuilder.GetRepositoryPackage(),
-						Reference: methodCtx,
+						Pkg: builder.DomainBuilder.GetRepositoryPackage(),
+						Reference: &model.ExternalType{
+							Type: GetRepositoryMethodOptionName(ctx, methodName),
+						},
 					},
 				},
+			},
+		},
+		Results: []*model.Param{
+			{
+				Type: model.PrimitiveTypeError,
 			},
 		},
 	})

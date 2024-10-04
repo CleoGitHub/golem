@@ -63,6 +63,11 @@ var CommonPkgs = map[string]*model.GoPkg{
 		ShortName: "gorm",
 		FullName:  "gorm.io/gorm",
 	},
+	"gorm/clause": {
+		Alias:     "clause",
+		ShortName: "clause",
+		FullName:  "gorm.io/gorm/clause",
+	},
 	"http": {
 		Alias:     "http",
 		ShortName: "http",

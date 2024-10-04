@@ -343,6 +343,10 @@ func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation
 				"%s: %s(%s.%s)", GetMultipleRelationName(ctx, to), GormModelsToModels(ctx, to), GORM_MODEL_METHOD_NAME, GetMultipleRelationName(ctx, to),
 			) + "," + consts.LN
 		})
+
+		if relation.Type == coredomaindefinition.RelationTypeManyToMany {
+			builder.addManyToManyMethods(ctx, relation)
+		}
 	}
 
 	return builder
@@ -365,7 +369,7 @@ func (builder *GormRepositoryBuilder) addGetMethod(ctx context.Context) {
 		str += s
 		pkg = append(pkg, p...)
 
-		s, p = builder.getGormTransactionInitialisation(ctx)
+		s, p = builder.getGormTransactionInitialisation(ctx, "nil")
 		str += s
 		pkg = append(pkg, p...)
 
@@ -413,7 +417,7 @@ func (builder *GormRepositoryBuilder) addListMethod(ctx context.Context) {
 		str += s
 		pkg = append(pkg, p...)
 
-		s, p = builder.getGormTransactionInitialisation(ctx)
+		s, p = builder.getGormTransactionInitialisation(ctx, "nil")
 		str += s
 		pkg = append(pkg, p...)
 
@@ -457,7 +461,36 @@ func (builder *GormRepositoryBuilder) addCreateMethod(ctx context.Context) {
 	methodName := GetRepositoryCreateMethod(ctx, builder.Definition)
 
 	ctxName := GetMethodContextName(ctx, methodName)
-	_ = ctxName
+	method := GetRepositoryCreateSignature(ctx, builder.Definition, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.GetModelPackage())
+	method.Content = func() (string, []*model.GoPkg) {
+		str := ""
+		pkg := []*model.GoPkg{}
+
+		s, p := builder.getInitContext(ctx, ctxName)
+		str += s
+		pkg = append(pkg, p...)
+
+		s, p = builder.getGormTransactionInitialisation(ctx, "nil")
+		str += s
+		pkg = append(pkg, p...)
+
+		str += fmt.Sprintf("result := %s(%s)", ModelToGormModel(ctx, builder.Definition.On), REPOSITORY_ENTITY_PARAM_NAME) + consts.LN
+		str += fmt.Sprintf("err := db.Model(&%s{}).Create(result).Error", GetModelName(ctx, builder.Definition.On)) + consts.LN
+		str += "if err != nil {" + consts.LN
+		str += "return nil, err" + consts.LN
+		str += "} " + consts.LN
+		str += fmt.Sprintf("return %s(result), nil", GormModelToModel(ctx, builder.Definition.On)) + consts.LN
+
+		return str, pkg
+	}
+	method.On = &model.PkgReference{
+		Pkg: builder.DomainBuilder.GetGormAdapterPackage(),
+		Reference: &model.ExternalType{
+			Type: GetGormDomainRepositoryName(ctx, builder.DomainBuilder.Definition),
+		},
+	}
+	method.OnName = GORM_DOMAIN_REPO_METHOD_NAME
+	builder.Repository.Elements = append(builder.Repository.Elements, method)
 }
 
 func (builder *GormRepositoryBuilder) addUpdateMethod(ctx context.Context) {
@@ -468,7 +501,38 @@ func (builder *GormRepositoryBuilder) addUpdateMethod(ctx context.Context) {
 	methodName := GetRepositoryUpdateMethod(ctx, builder.Definition)
 
 	ctxName := GetMethodContextName(ctx, methodName)
-	_ = ctxName
+	method := GetRepositoryUpdateSignature(ctx, builder.Definition, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.GetModelPackage())
+	method.Content = func() (string, []*model.GoPkg) {
+		str := ""
+		pkg := []*model.GoPkg{
+			consts.CommonPkgs["gorm/clause"],
+		}
+
+		s, p := builder.getInitContext(ctx, ctxName)
+		str += s
+		pkg = append(pkg, p...)
+
+		s, p = builder.getGormTransactionInitialisation(ctx, "nil")
+		str += s
+		pkg = append(pkg, p...)
+
+		str += fmt.Sprintf("result := %s(%s)", ModelToGormModel(ctx, builder.Definition.On), REPOSITORY_ENTITY_PARAM_NAME) + consts.LN
+		str += fmt.Sprintf("err := db.Model(&%s{}).Clauses(clause.Returning{}).Updates(result).Error", GetModelName(ctx, builder.Definition.On)) + consts.LN
+		str += "if err != nil {" + consts.LN
+		str += "return nil, err" + consts.LN
+		str += "} " + consts.LN
+		str += fmt.Sprintf("return %s(result), nil", GormModelToModel(ctx, builder.Definition.On)) + consts.LN
+
+		return str, pkg
+	}
+	method.On = &model.PkgReference{
+		Pkg: builder.DomainBuilder.GetGormAdapterPackage(),
+		Reference: &model.ExternalType{
+			Type: GetGormDomainRepositoryName(ctx, builder.DomainBuilder.Definition),
+		},
+	}
+	method.OnName = GORM_DOMAIN_REPO_METHOD_NAME
+	builder.Repository.Elements = append(builder.Repository.Elements, method)
 }
 
 func (builder *GormRepositoryBuilder) addDeleteMethod(ctx context.Context) {
@@ -479,7 +543,37 @@ func (builder *GormRepositoryBuilder) addDeleteMethod(ctx context.Context) {
 	methodName := GetRepositoryDeleteMethod(ctx, builder.Definition)
 
 	ctxName := GetMethodContextName(ctx, methodName)
-	_ = ctxName
+	method := GetRepositoryDeleteSignature(ctx, builder.Definition, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.GetModelPackage())
+	method.Content = func() (string, []*model.GoPkg) {
+		str := ""
+		pkg := []*model.GoPkg{
+			consts.CommonPkgs["gorm/clause"],
+		}
+
+		s, p := builder.getInitContext(ctx, ctxName)
+		str += s
+		pkg = append(pkg, p...)
+
+		s, p = builder.getGormTransactionInitialisation(ctx, "")
+		str += s
+		pkg = append(pkg, p...)
+
+		str += fmt.Sprintf("err := db.Model(&%s{}).Delete(&%s{Id: id}).Error", GetModelName(ctx, builder.Definition.On), GetModelName(ctx, builder.Definition.On)) + consts.LN
+		str += "if err != nil {" + consts.LN
+		str += "return err" + consts.LN
+		str += "} " + consts.LN
+		str += "return nil" + consts.LN
+
+		return str, pkg
+	}
+	method.On = &model.PkgReference{
+		Pkg: builder.DomainBuilder.GetGormAdapterPackage(),
+		Reference: &model.ExternalType{
+			Type: GetGormDomainRepositoryName(ctx, builder.DomainBuilder.Definition),
+		},
+	}
+	method.OnName = GORM_DOMAIN_REPO_METHOD_NAME
+	builder.Repository.Elements = append(builder.Repository.Elements, method)
 }
 
 func (builder *GormRepositoryBuilder) addManyToManyMethods(ctx context.Context, relation *coredomaindefinition.Relation) {
@@ -487,10 +581,170 @@ func (builder *GormRepositoryBuilder) addManyToManyMethods(ctx context.Context, 
 		return
 	}
 
-	methodName := GetRepositoryAddRelationMethod(ctx, builder.Definition, relation)
+	addMethodName := GetRepositoryAddRelationMethod(ctx, builder.Definition, relation)
+	addCtxName := GetMethodContextName(ctx, addMethodName)
 
-	ctxName := GetMethodContextName(ctx, methodName)
-	_ = ctxName
+	var to *coredomaindefinition.Model
+	if relation.Source == builder.Definition.On {
+		to = relation.Target
+	} else {
+		to = relation.Source
+	}
+
+	method := &model.Function{
+		Name: addMethodName,
+		Args: []*model.Param{
+			{
+				Name: "ctx",
+				Type: &model.PkgReference{
+					Pkg: consts.CommonPkgs["context"],
+					Reference: &model.ExternalType{
+						Type: "Context",
+					},
+				},
+			},
+			{
+				Name: builder.Definition.On.Name + "Id",
+				Type: model.PrimitiveTypeString,
+			},
+			{
+				Name: to.Name + "Id",
+				Type: model.PrimitiveTypeString,
+			},
+			{
+				Name: "opts",
+				Type: &model.VariaidicType{
+					Type: &model.PkgReference{
+						Pkg: builder.DomainBuilder.GetRepositoryPackage(),
+						Reference: &model.ExternalType{
+							Type: GetRepositoryMethodOptionName(ctx, addMethodName),
+						},
+					},
+				},
+			},
+		},
+		Results: []*model.Param{
+			{
+				Type: model.PrimitiveTypeError,
+			},
+		},
+	}
+	method.Content = func() (string, []*model.GoPkg) {
+		str := ""
+		pkg := []*model.GoPkg{
+			consts.CommonPkgs["gorm/clause"],
+		}
+
+		s, p := builder.getInitContext(ctx, addCtxName)
+		str += s
+		pkg = append(pkg, p...)
+
+		s, p = builder.getGormTransactionInitialisation(ctx, "")
+		str += s
+		pkg = append(pkg, p...)
+
+		str += fmt.Sprintf(
+			`err := db.Model(&%s{Id: %s}).Association("%s").Append(&%s{Id: %s})`,
+			GetModelName(ctx, builder.Definition.On),
+			builder.Definition.On.Name+"Id",
+			GetMultipleRelationName(ctx, to),
+			GetModelName(ctx, to),
+			to.Name+"Id",
+		) + consts.LN
+		str += "if err != nil {" + consts.LN
+		str += "return err" + consts.LN
+		str += "} " + consts.LN
+		str += "return nil" + consts.LN
+
+		return str, pkg
+	}
+	method.On = &model.PkgReference{
+		Pkg: builder.DomainBuilder.GetGormAdapterPackage(),
+		Reference: &model.ExternalType{
+			Type: GetGormDomainRepositoryName(ctx, builder.DomainBuilder.Definition),
+		},
+	}
+	method.OnName = GORM_DOMAIN_REPO_METHOD_NAME
+	builder.Repository.Elements = append(builder.Repository.Elements, method)
+
+	removeMethodName := GetRepositoryRemoveRelationMethod(ctx, builder.Definition, relation)
+	removeCtxName := GetMethodContextName(ctx, removeMethodName)
+
+	method = &model.Function{
+		Name: removeMethodName,
+		Args: []*model.Param{
+			{
+				Name: "ctx",
+				Type: &model.PkgReference{
+					Pkg: consts.CommonPkgs["context"],
+					Reference: &model.ExternalType{
+						Type: "Context",
+					},
+				},
+			},
+			{
+				Name: builder.Definition.On.Name + "Id",
+				Type: model.PrimitiveTypeString,
+			},
+			{
+				Name: to.Name + "Id",
+				Type: model.PrimitiveTypeString,
+			},
+			{
+				Name: "opts",
+				Type: &model.VariaidicType{
+					Type: &model.PkgReference{
+						Pkg: builder.DomainBuilder.GetRepositoryPackage(),
+						Reference: &model.ExternalType{
+							Type: GetRepositoryMethodOptionName(ctx, removeMethodName),
+						},
+					},
+				},
+			},
+		},
+		Results: []*model.Param{
+			{
+				Type: model.PrimitiveTypeError,
+			},
+		},
+	}
+	method.Content = func() (string, []*model.GoPkg) {
+		str := ""
+		pkg := []*model.GoPkg{
+			consts.CommonPkgs["gorm/clause"],
+		}
+
+		s, p := builder.getInitContext(ctx, removeCtxName)
+		str += s
+		pkg = append(pkg, p...)
+
+		s, p = builder.getGormTransactionInitialisation(ctx, "")
+		str += s
+		pkg = append(pkg, p...)
+
+		str += fmt.Sprintf(
+			`err := db.Model(&%s{Id: %s}).Association("%s").Delete(&%s{Id: %s})`,
+			GetModelName(ctx, builder.Definition.On),
+			builder.Definition.On.Name+"Id",
+			GetMultipleRelationName(ctx, to),
+			GetModelName(ctx, to),
+			to.Name+"Id",
+		) + consts.LN
+		str += "if err != nil {" + consts.LN
+		str += "return err" + consts.LN
+		str += "} " + consts.LN
+		str += "return nil" + consts.LN
+
+		return str, pkg
+	}
+	method.On = &model.PkgReference{
+		Pkg: builder.DomainBuilder.GetGormAdapterPackage(),
+		Reference: &model.ExternalType{
+			Type: GetGormDomainRepositoryName(ctx, builder.DomainBuilder.Definition),
+		},
+	}
+	method.OnName = GORM_DOMAIN_REPO_METHOD_NAME
+	builder.Repository.Elements = append(builder.Repository.Elements, method)
 }
 
 func (builder *GormRepositoryBuilder) addMethods(ctx context.Context) {
@@ -607,11 +861,14 @@ func (builder *GormRepositoryBuilder) getInitContext(ctx context.Context, contex
 	}
 }
 
-func (builder *GormRepositoryBuilder) getGormTransactionInitialisation(ctx context.Context) (string, []*model.GoPkg) {
+func (builder *GormRepositoryBuilder) getGormTransactionInitialisation(ctx context.Context, extraReturns string) (string, []*model.GoPkg) {
 	str := fmt.Sprintf("var db *%s.DB", consts.CommonPkgs["gorm"].Alias) + consts.LN
 	str += fmt.Sprintf("if %s.Transaction != nil {", GORM_METHOD_CONTEXT_NAME) + consts.LN
 	str += fmt.Sprintf("tx, ok := %s.Transaction.Get(ctx).(*%s.DB)", GORM_METHOD_CONTEXT_NAME, consts.CommonPkgs["gorm"].Alias) + consts.LN
-	str += fmt.Sprintf(`if !ok { return nil, %s.New("expected transaction to be *gorm.DB") }`, consts.CommonPkgs["errors"].Alias) + consts.LN
+	if extraReturns != "" {
+		extraReturns = fmt.Sprintf("%s, ", extraReturns)
+	}
+	str += fmt.Sprintf(`if !ok { return %s %s.New("expected transaction to be *gorm.DB") }`, extraReturns, consts.CommonPkgs["errors"].Alias) + consts.LN
 	str += fmt.Sprintf("%s = tx", GORM_DOMAIN_REPOSITORY_DB_FIELD_NAME) + consts.LN
 	str += "} else { " + consts.LN
 	str += fmt.Sprintf(
