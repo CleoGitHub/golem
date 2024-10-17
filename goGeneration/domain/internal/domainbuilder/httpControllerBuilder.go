@@ -14,6 +14,14 @@ import (
 
 const ROUTE_TMPL = `ctx := r.Context()
 
+bearer := r.Header.Get("Authorization")
+if bearer != "" {
+	bearer = strings.Replace(bearer, "Bearer", "", 1)
+	bearer = strings.TrimSpace(bearer)
+}
+
+ctx = context.WithValue(ctx, "token", bearer)
+
 request := &{{ .UsecasePkg }}.{{ .UsecaseRequest }}{}
 
 err := json.NewDecoder(r.Body).Decode(request)
@@ -30,6 +38,12 @@ if err != nil {
 	if {{ .ControllerName }}.{{ .Validator }}.{{ .IsValidationErrorMethodName }}(ctx, err) {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		w.Write([]byte(err.Error()))
+		return
+	} else if errors.Is({{ .UsecasePkg }}.{{ .UsecaseErrUnauthorized }}, err) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	} else if errors.Is({{ .UsecasePkg }}.{{ .UsecaseErrNotAllowed }}, err) {
+		w.WriteHeader(http.StatusForbidden)
 		return
 	} else if errors.Is({{ .RepositoryPkg }}.{{ .RepostiroyErrNotFound }}, err) {
 		w.WriteHeader(http.StatusNotFound)
@@ -60,6 +74,8 @@ type RouteTemplate struct {
 	Usecases                    string
 	IsValidationErrorMethodName string
 	OptionalFieldExtraction     string
+	UsecaseErrNotAllowed        string
+	UsecaseErrUnauthorized      string
 }
 
 type HttpControllerBuilder struct {
@@ -219,6 +235,8 @@ func (builder *HttpControllerBuilder) getRouteContent(ctx context.Context, metho
 		Usecases:                    GetDomainUsecaseName(ctx, builder.domainDefinition.Name),
 		IsValidationErrorMethodName: VALIDATOR_IS_VALIDATION_ERROR_METHOD_NAME,
 		OptionalFieldExtraction:     optionalFieldExtraction,
+		UsecaseErrUnauthorized:      ERR_UNAUTHORIZED_NAME,
+		UsecaseErrNotAllowed:        ERR_NOT_ALLOWED_NAME,
 	}
 
 	buffer := bytes.NewBufferString("")
@@ -238,7 +256,10 @@ func (builder *HttpControllerBuilder) WithUsecase(ctx context.Context, definitio
 		return
 	}
 
-	pkgs := []*model.GoPkg{}
+	pkgs := []*model.GoPkg{
+		consts.CommonPkgs["strings"],
+		consts.CommonPkgs["context"],
+	}
 
 	method := GetUsecaseMethodName(ctx, definition.Name)
 	route := GetHttpRoute(ctx, method)

@@ -63,8 +63,6 @@ func StringifyFileUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgMan
 				return "", merror.Stack(err)
 			}
 			str += s + consts.LN
-		case *model.Raw:
-			str += t.Content + consts.LN
 		default:
 			return "", merror.Stack(fmt.Errorf("unexpected type %T in File", t))
 		}
