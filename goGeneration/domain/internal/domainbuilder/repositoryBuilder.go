@@ -471,7 +471,7 @@ func (builder *RepositoryBuilder) addRetriveMethodDefaultContextField(ctx contex
 		return
 	}
 
-	if builder.DomainBuilder.RelationGraph.GetNode(builder.Definition.On).RequireRetriveInactive() {
+	if node := builder.DomainBuilder.RelationGraph.GetNode(builder.Definition.On); node != nil && node.RequireRetriveInactive() {
 		methodContext.Fields = append(methodContext.Fields, &model.Field{
 			Name: REPOSITORY_RETRIEVE_INACTIVE,
 			Type: model.PrimitiveTypeBool,

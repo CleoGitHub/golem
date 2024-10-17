@@ -238,6 +238,8 @@ func (builder *HttpControllerBuilder) WithUsecase(ctx context.Context, definitio
 		return
 	}
 
+	pkgs := []*model.GoPkg{}
+
 	method := GetUsecaseMethodName(ctx, definition.Name)
 	route := GetHttpRoute(ctx, method)
 	route.Content = func() (content string, requiredPkg []*model.GoPkg) {
@@ -262,6 +264,7 @@ func (builder *HttpControllerBuilder) WithUsecase(ctx context.Context, definitio
 
 				optionalContent += str
 				fileIdx++
+				pkgs = append(pkgs, consts.CommonPkgs["io"])
 			}
 		}
 
@@ -269,9 +272,9 @@ func (builder *HttpControllerBuilder) WithUsecase(ctx context.Context, definitio
 			optionalContent = "r.ParseMultipartForm(10 << 20)" + consts.LN + consts.LN + optionalContent
 		}
 
-		str, pkgs := builder.getRouteContent(ctx, GetUsecaseMethodName(ctx, method), GetUsecaseRequestName(ctx, method), optionalContent)
+		str, pkgsContent := builder.getRouteContent(ctx, GetUsecaseMethodName(ctx, method), GetUsecaseRequestName(ctx, method), optionalContent)
 
-		return str, append(pkgs, consts.CommonPkgs["io"])
+		return str, append(pkgs, pkgsContent...)
 	}
 
 	builder.controller.Methods = append(builder.controller.Methods, route)

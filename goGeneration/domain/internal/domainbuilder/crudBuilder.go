@@ -364,7 +364,7 @@ func (builder *CRUDBuilder) addGet(ctx context.Context) {
 			str += fmt.Sprintf(`%s: %s.%s,`, REPOSITORY_WHERE_VALUE, REQUEST_PARAM_NAME, consts.ID) + consts.LN
 			str += "}," + consts.LN
 			str += "})," + consts.LN
-			if builder.domainBuilder.RelationGraph.GetNode(builder.definition.On).RequireRetriveInactive() {
+			if node := builder.domainBuilder.RelationGraph.GetNode(builder.definition.On); node != nil && node.RequireRetriveInactive() {
 				str += fmt.Sprintf(`%s.%s.%s(true),`, repoAlias, GetRepositoryGetMethod(ctx, builder.definition.On), GetOptName(ctx, REPOSITORY_RETRIEVE_INACTIVE)) + consts.LN
 			}
 			str += ")" + consts.LN
@@ -487,7 +487,7 @@ func (builder *CRUDBuilder) addList(ctx context.Context) {
 			str += "ctx," + consts.LN
 			str += fmt.Sprintf("%s.%s.%s([]*%s.%s{", repoAlias, GetRepositoryListMethod(ctx, builder.definition.On), GetOptName(ctx, REPOSITORY_BY), repoAlias, REPOSITORY_WHERE) + consts.LN
 			str += "})," + consts.LN
-			if builder.domainBuilder.RelationGraph.GetNode(builder.definition.On).RequireRetriveInactive() {
+			if node := builder.domainBuilder.RelationGraph.GetNode(builder.definition.On); node != nil && node.RequireRetriveInactive() {
 				str += fmt.Sprintf(`%s.%s.%s(true),`, repoAlias, GetRepositoryListMethod(ctx, builder.definition.On), GetOptName(ctx, REPOSITORY_RETRIEVE_INACTIVE)) + consts.LN
 			}
 			str += fmt.Sprintf(`%s.%s.%s(%s.%s),`, repoAlias, GetRepositoryListMethod(ctx, builder.definition.On), GetOptName(ctx, PAGINATION_NAME), REQUEST_PARAM_NAME, PAGINATION_NAME) + consts.LN

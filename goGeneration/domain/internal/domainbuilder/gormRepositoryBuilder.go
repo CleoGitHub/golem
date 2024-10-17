@@ -894,23 +894,25 @@ func (builder *GormRepositoryBuilder) getRequestModelWithDependencyTree(ctx cont
 
 	node := builder.DomainBuilder.RelationGraph.GetNode(builder.Definition.On)
 	path := ""
-	i := 0
-	for i < len(node.Links) {
-		link := node.Links[i]
-		if link.Type == RelationNodeLinkType_DEPEND {
-			node = link.To
-			i = 0
-			path = fmt.Sprintf("%s.%s", path, GetSingleRelationName(ctx, node.Model))
-			path = strings.TrimPrefix(path, ".")
-			if node.RequireRetriveInactive() && node.Model.Activable {
-				str += fmt.Sprintf("if %s.%s {", GORM_METHOD_CONTEXT_NAME, REPOSITORY_RETRIEVE_INACTIVE) + consts.LN
-				str += fmt.Sprintf(`%s.Joins("%s")`, GORM_REQUEST_NAME, path) + consts.LN
-				str += "} else {" + consts.LN
-				str += fmt.Sprintf(`%s.Joins("%s", %s.Where(&%s{%s: true}))`, GORM_REQUEST_NAME, path, GORM_REQUEST_NAME, GetModelName(ctx, node.Model), ACTIVE_FIELD_NAME) + consts.LN
-				str += "}" + consts.LN
+	if node != nil {
+		i := 0
+		for i < len(node.Links) {
+			link := node.Links[i]
+			if link.Type == RelationNodeLinkType_DEPEND {
+				node = link.To
+				i = 0
+				path = fmt.Sprintf("%s.%s", path, GetSingleRelationName(ctx, node.Model))
+				path = strings.TrimPrefix(path, ".")
+				if node.RequireRetriveInactive() && node.Model.Activable {
+					str += fmt.Sprintf("if %s.%s {", GORM_METHOD_CONTEXT_NAME, REPOSITORY_RETRIEVE_INACTIVE) + consts.LN
+					str += fmt.Sprintf(`%s.Joins("%s")`, GORM_REQUEST_NAME, path) + consts.LN
+					str += "} else {" + consts.LN
+					str += fmt.Sprintf(`%s.Joins("%s", %s.Where(&%s{%s: true}))`, GORM_REQUEST_NAME, path, GORM_REQUEST_NAME, GetModelName(ctx, node.Model), ACTIVE_FIELD_NAME) + consts.LN
+					str += "}" + consts.LN
+				}
+			} else {
+				i++
 			}
-		} else {
-			i++
 		}
 	}
 	str += fmt.Sprintf("if %s.%s != nil {", GORM_METHOD_CONTEXT_NAME, REPOSITORY_BY) + consts.LN
