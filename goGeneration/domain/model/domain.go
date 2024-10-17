@@ -2,24 +2,8 @@ package model
 
 type Domain struct {
 	Name         string
-	Templates    []*Template
 	Architecture *Architecture
-	// RepositoryTransaction *Interface
-	Models           []*Model
-	UsecaseStructs   []*Struct
-	Usecases         []*Usecase
-	UsecasesCRUDImpl *Struct
-	DomainRepository *Interface
-	// Repositories     []*Repository
-	// RepositoryErrors     []*Var
-	Controllers []*Struct
-	// PortImplementations  map[string][]*Struct
-	GormTransaction      *Struct
-	GormModels           []*GormModel
-	GormDomainRepository *Struct
-	HttpService          *Struct
-	Service              *Interface
-
-	ModelsV2 []*Struct
-	Ports    []*File
+	Models       []*Struct
+	Files        []*File
+	JSFiles      map[string]string
 }

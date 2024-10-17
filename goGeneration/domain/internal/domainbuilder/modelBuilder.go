@@ -11,6 +11,8 @@ import (
 )
 
 type ModelBuilder struct {
+	*EmptyBuilder
+
 	DomainBuilder *domainBuilder
 
 	Definition *coredomaindefinition.Model
@@ -89,9 +91,9 @@ func NewModelBuilder(
 	return builder
 }
 
-func (builder *ModelBuilder) WithRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) Builder {
+func (builder *ModelBuilder) WithRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) {
 	if builder.Err != nil {
-		return builder
+		return
 	}
 
 	var to *coredomaindefinition.Model
@@ -100,12 +102,12 @@ func (builder *ModelBuilder) WithRelation(ctx context.Context, relationDefinitio
 	} else if relationDefinition.Target == builder.Definition {
 		// reverse not needed
 		if relationDefinition.IgnoreReverse {
-			return builder
+			return
 		}
 
 		to = relationDefinition.Source
 	} else {
-		return builder
+		return
 	}
 
 	if IsRelationMultiple(ctx, builder.Definition, relationDefinition) {
@@ -148,18 +150,6 @@ func (builder *ModelBuilder) WithRelation(ctx context.Context, relationDefinitio
 			}}},
 		})
 	}
-
-	return builder
-}
-
-// WithModel implements Builder.
-func (builder *ModelBuilder) WithModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) Builder {
-	return builder
-}
-
-// WithRepository implements Builder.
-func (builder *ModelBuilder) WithRepository(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) Builder {
-	return builder
 }
 
 func (builder *ModelBuilder) Build(ctx context.Context) error {
@@ -167,7 +157,7 @@ func (builder *ModelBuilder) Build(ctx context.Context) error {
 		return builder.Err
 	}
 
-	builder.DomainBuilder.Domain.ModelsV2 = append(builder.DomainBuilder.Domain.ModelsV2, builder.Model)
+	builder.DomainBuilder.Domain.Models = append(builder.DomainBuilder.Domain.Models, builder.Model)
 
 	return nil
 }

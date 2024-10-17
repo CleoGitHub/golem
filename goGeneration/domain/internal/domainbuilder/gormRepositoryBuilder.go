@@ -115,14 +115,14 @@ func NewGormRepositoryBuilder(
 		builder.ModelToGormModel = append(builder.ModelToGormModel, func() string {
 			return fmt.Sprintf(
 				"%s: %s.%s",
-				GetFieldName(ctx, f), GORM_MODEL_METHOD_NAME, GetFieldName(ctx, f),
+				GetFieldName(ctx, f.Name), GORM_MODEL_METHOD_NAME, GetFieldName(ctx, f.Name),
 			) + "," + consts.LN
 		})
 
 		builder.GormModelToModel = append(builder.GormModelToModel, func() string {
 			return fmt.Sprintf(
 				"%s: %s.%s",
-				GetFieldName(ctx, f), GORM_MODEL_METHOD_NAME, GetFieldName(ctx, f),
+				GetFieldName(ctx, f.Name), GORM_MODEL_METHOD_NAME, GetFieldName(ctx, f.Name),
 			) + "," + consts.LN
 		})
 	}
@@ -219,7 +219,7 @@ func NewGormRepositoryBuilder(
 		builder.ModelToGormModel = append(builder.ModelToGormModel, func() string {
 			return fmt.Sprintf(
 				"%s: %s.%s",
-				GetFieldName(ctx, field), GORM_MODEL_METHOD_NAME, GetFieldName(ctx, field),
+				GetFieldName(ctx, field.Name), GORM_MODEL_METHOD_NAME, GetFieldName(ctx, field.Name),
 			) + "," + consts.LN
 		})
 	}
@@ -227,13 +227,13 @@ func NewGormRepositoryBuilder(
 	return builder
 }
 
-func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation *coredomaindefinition.Relation) Builder {
+func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation *coredomaindefinition.Relation) {
 	if builder.Err != nil {
-		return builder
+		return
 	}
 
 	if relation.Source != builder.Definition.On && relation.Target != builder.Definition.On {
-		return builder
+		return
 	}
 
 	var to *coredomaindefinition.Model
@@ -241,7 +241,7 @@ func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation
 		to = relation.Target
 	} else {
 		if relation.IgnoreReverse {
-			return builder
+			return
 		}
 		to = relation.Source
 	}
@@ -275,7 +275,7 @@ func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation
 		optionnal, err := IsRelationOptionnal(ctx, builder.Definition.On, relation)
 		if err != nil {
 			builder.Err = merror.Stack(err)
-			return builder
+			return
 		}
 
 		var t model.Type = model.PrimitiveTypeString
@@ -348,8 +348,6 @@ func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation
 			builder.addManyToManyMethods(ctx, relation)
 		}
 	}
-
-	return builder
 }
 
 func (builder *GormRepositoryBuilder) addGetMethod(ctx context.Context) {
@@ -357,7 +355,7 @@ func (builder *GormRepositoryBuilder) addGetMethod(ctx context.Context) {
 		return
 	}
 
-	methodName := GetRepositoryGetMethod(ctx, builder.Definition)
+	methodName := GetRepositoryGetMethod(ctx, builder.Definition.On)
 
 	ctxName := GetMethodContextName(ctx, methodName)
 	method := GetRepositoryGetSignature(ctx, builder.Definition, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.GetModelPackage())
@@ -405,7 +403,7 @@ func (builder *GormRepositoryBuilder) addListMethod(ctx context.Context) {
 		return
 	}
 
-	methodName := GetRepositoryListMethod(ctx, builder.Definition)
+	methodName := GetRepositoryListMethod(ctx, builder.Definition.On)
 
 	ctxName := GetMethodContextName(ctx, methodName)
 	method := GetRepositoryListSignature(ctx, builder.Definition, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.GetModelPackage())
@@ -425,7 +423,7 @@ func (builder *GormRepositoryBuilder) addListMethod(ctx context.Context) {
 		str += s
 		pkg = append(pkg, p...)
 
-		str += fmt.Sprintf("if %s.%s != nil {", GORM_METHOD_CONTEXT_NAME, PAGINATION_NAME) + consts.LN
+		str += fmt.Sprintf("if %s.%s != (%s.%s{}) {", GORM_METHOD_CONTEXT_NAME, PAGINATION_NAME, builder.DomainBuilder.GetModelPackage().Alias, PAGINATION_NAME) + consts.LN
 		limit := fmt.Sprintf("%s.%s.%s()", GORM_METHOD_CONTEXT_NAME, PAGINATION_NAME, PAGINATION_GetItemsPerPage)
 		offset := fmt.Sprintf("%s.%s.%s()", GORM_METHOD_CONTEXT_NAME, PAGINATION_NAME, PAGINATION_GetPage)
 		str += fmt.Sprintf(
@@ -458,7 +456,7 @@ func (builder *GormRepositoryBuilder) addCreateMethod(ctx context.Context) {
 		return
 	}
 
-	methodName := GetRepositoryCreateMethod(ctx, builder.Definition)
+	methodName := GetRepositoryCreateMethod(ctx, builder.Definition.On)
 
 	ctxName := GetMethodContextName(ctx, methodName)
 	method := GetRepositoryCreateSignature(ctx, builder.Definition, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.GetModelPackage())
@@ -498,7 +496,7 @@ func (builder *GormRepositoryBuilder) addUpdateMethod(ctx context.Context) {
 		return
 	}
 
-	methodName := GetRepositoryUpdateMethod(ctx, builder.Definition)
+	methodName := GetRepositoryUpdateMethod(ctx, builder.Definition.On)
 
 	ctxName := GetMethodContextName(ctx, methodName)
 	method := GetRepositoryUpdateSignature(ctx, builder.Definition, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.GetModelPackage())
@@ -540,7 +538,7 @@ func (builder *GormRepositoryBuilder) addDeleteMethod(ctx context.Context) {
 		return
 	}
 
-	methodName := GetRepositoryDeleteMethod(ctx, builder.Definition)
+	methodName := GetRepositoryDeleteMethod(ctx, builder.Definition.On)
 
 	ctxName := GetMethodContextName(ctx, methodName)
 	method := GetRepositoryDeleteSignature(ctx, builder.Definition, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.GetModelPackage())
@@ -581,7 +579,7 @@ func (builder *GormRepositoryBuilder) addManyToManyMethods(ctx context.Context, 
 		return
 	}
 
-	addMethodName := GetRepositoryAddRelationMethod(ctx, builder.Definition, relation)
+	addMethodName := GetRepositoryAddRelationMethod(ctx, builder.Definition.On, relation)
 	addCtxName := GetMethodContextName(ctx, addMethodName)
 
 	var to *coredomaindefinition.Model
@@ -667,7 +665,7 @@ func (builder *GormRepositoryBuilder) addManyToManyMethods(ctx context.Context, 
 	method.OnName = GORM_DOMAIN_REPO_METHOD_NAME
 	builder.Repository.Elements = append(builder.Repository.Elements, method)
 
-	removeMethodName := GetRepositoryRemoveRelationMethod(ctx, builder.Definition, relation)
+	removeMethodName := GetRepositoryRemoveRelationMethod(ctx, builder.Definition.On, relation)
 	removeCtxName := GetMethodContextName(ctx, removeMethodName)
 
 	method = &model.Function{
@@ -894,12 +892,10 @@ func (builder *GormRepositoryBuilder) getRequestModelWithDependencyTree(ctx cont
 		str += "}" + consts.LN
 	}
 
-	fmt.Printf("START graph for %s\n", builder.Model.Name)
 	node := builder.DomainBuilder.RelationGraph.GetNode(builder.Definition.On)
 	path := ""
 	i := 0
 	for i < len(node.Links) {
-		fmt.Printf("current node: %s, link to => %s, type: %v\n", node.Model.Name, node.Links[i].To.Model.Name, node.Links[i].Type)
 		link := node.Links[i]
 		if link.Type == RelationNodeLinkType_DEPEND {
 			node = link.To
@@ -921,8 +917,8 @@ func (builder *GormRepositoryBuilder) getRequestModelWithDependencyTree(ctx cont
 	str += fmt.Sprintf("for _, where := range %s.%s {", GORM_METHOD_CONTEXT_NAME, REPOSITORY_BY) + consts.LN
 	str += fmt.Sprintf("if slices.Contains(%s.%s, where.Key){", builder.DomainBuilder.GetRepositoryPackage().Alias, GetRepositoryAllowedWhere(ctx, builder.Definition.On)) + consts.LN
 	str += fmt.Sprintf(
-		`%s = %s.Where(fmt.Sprintf("%s %s ?", where.Key, %s(where.Operator)), %s(where.Value))`,
-		GORM_REQUEST_NAME, GORM_REQUEST_NAME, "%s", "%s", OPERATOR_TO_GORM_OPERATOR, VALUE_TO_GORM_VALUE,
+		`%s = %s.Where(fmt.Sprintf("%s %s ?", %s.%s[where.Key], %s(where.Operator)), %s(where.Value))`,
+		GORM_REQUEST_NAME, GORM_REQUEST_NAME, "%s", "%s", builder.DomainBuilder.GetRepositoryPackage().Alias, GetRepositoryFieldToColumnName(ctx, builder.Definition), OPERATOR_TO_GORM_OPERATOR, VALUE_TO_GORM_VALUE,
 	) + consts.LN
 	str += "}" + consts.LN
 	str += "}" + consts.LN
@@ -1043,10 +1039,10 @@ func (builder *GormRepositoryBuilder) Build(ctx context.Context) (err error) {
 	builder.addMethods(ctx)
 
 	// builder.addMethods(ctx, builder.GormDomainRepositoryBuilder)
-	builder.DomainBuilder.Domain.Ports = append(builder.DomainBuilder.Domain.Ports, builder.GormModel)
-	builder.DomainBuilder.Domain.Ports = append(builder.DomainBuilder.Domain.Ports, builder.Repository)
+	builder.DomainBuilder.Domain.Files = append(builder.DomainBuilder.Domain.Files, builder.GormModel)
+	builder.DomainBuilder.Domain.Files = append(builder.DomainBuilder.Domain.Files, builder.Repository)
 
-	// builder.DomainBuilder.Domain.Ports = append(builder.DomainBuilder.Domain.Ports, &model.File{
+	// builder.DomainBuilder.Domain.Files = append(builder.DomainBuilder.Domain.Files, &model.File{
 	// 	Name: builder.Definition.On.Name,
 	// 	Pkg:  builder.DomainBuilder.GetGormAdapterPackage(),
 	// 	Elements: []interface{}{

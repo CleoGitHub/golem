@@ -13,9 +13,9 @@ func (t *TypeDefinition) SubTypes() []Type {
 	return []Type{}
 }
 
-func (t *TypeDefinition) Copy() Type {
+func (t *TypeDefinition) Copy() *TypeDefinition {
 	return &TypeDefinition{
 		Name: t.Name,
-		Type: t.Type.Copy(),
+		Type: Copy(t),
 	}
 }

@@ -17,6 +17,10 @@ const (
 	REPOSITORY_ENTITY_PARAM_NAME       = "entity"
 )
 
+func GetOptName(ctx context.Context, name string) string {
+	return fmt.Sprintf("With%s", name)
+}
+
 func GetSingleRelationColumn(ctx context.Context, m *coredomaindefinition.Model) string {
 	return stringtool.SnakeCase(GetSingleRelationIdName(ctx, m))
 }
@@ -73,44 +77,44 @@ func GetRepositoryDefaultOrderBy(ctx context.Context, m *coredomaindefinition.Mo
 	return fmt.Sprintf("%s_DEFAULT_ORDER_BY", strings.ToUpper(m.Name))
 }
 
-func GetRepositoryGetMethod(ctx context.Context, definition *coredomaindefinition.Repository) string {
-	return fmt.Sprintf("Get%s", stringtool.UpperFirstLetter(definition.On.Name))
+func GetRepositoryGetMethod(ctx context.Context, on *coredomaindefinition.Model) string {
+	return fmt.Sprintf("Get%s", stringtool.UpperFirstLetter(on.Name))
 }
 
-func GetRepositoryListMethod(ctx context.Context, definition *coredomaindefinition.Repository) string {
-	return fmt.Sprintf("List%s", PluralizeName(ctx, definition.On.Name))
+func GetRepositoryListMethod(ctx context.Context, definition *coredomaindefinition.Model) string {
+	return fmt.Sprintf("List%s", PluralizeName(ctx, GetModelName(ctx, definition)))
 }
 
-func GetRepositoryCreateMethod(ctx context.Context, definition *coredomaindefinition.Repository) string {
-	return fmt.Sprintf("Create%s", stringtool.UpperFirstLetter(definition.On.Name))
+func GetRepositoryCreateMethod(ctx context.Context, definition *coredomaindefinition.Model) string {
+	return fmt.Sprintf("Create%s", stringtool.UpperFirstLetter(definition.Name))
 }
 
-func GetRepositoryUpdateMethod(ctx context.Context, definition *coredomaindefinition.Repository) string {
-	return fmt.Sprintf("Update%s", stringtool.UpperFirstLetter(definition.On.Name))
+func GetRepositoryUpdateMethod(ctx context.Context, definition *coredomaindefinition.Model) string {
+	return fmt.Sprintf("Update%s", stringtool.UpperFirstLetter(definition.Name))
 }
 
-func GetRepositoryDeleteMethod(ctx context.Context, definition *coredomaindefinition.Repository) string {
-	return fmt.Sprintf("Delete%s", stringtool.UpperFirstLetter(definition.On.Name))
+func GetRepositoryDeleteMethod(ctx context.Context, definition *coredomaindefinition.Model) string {
+	return fmt.Sprintf("Delete%s", stringtool.UpperFirstLetter(definition.Name))
 }
 
-func GetRepositoryAddRelationMethod(ctx context.Context, definition *coredomaindefinition.Repository, relation *coredomaindefinition.Relation) string {
+func GetRepositoryAddRelationMethod(ctx context.Context, definition *coredomaindefinition.Model, relation *coredomaindefinition.Relation) string {
 	var to *coredomaindefinition.Model
-	if relation.Source == definition.On {
+	if relation.Source == definition {
 		to = relation.Target
 	} else {
 		to = relation.Source
 	}
-	return fmt.Sprintf("Add%sTo%s", GetModelName(ctx, to), GetModelName(ctx, definition.On))
+	return fmt.Sprintf("Add%sTo%s", GetModelName(ctx, to), GetModelName(ctx, definition))
 }
 
-func GetRepositoryRemoveRelationMethod(ctx context.Context, definition *coredomaindefinition.Repository, relation *coredomaindefinition.Relation) string {
+func GetRepositoryRemoveRelationMethod(ctx context.Context, definition *coredomaindefinition.Model, relation *coredomaindefinition.Relation) string {
 	var to *coredomaindefinition.Model
-	if relation.Source == definition.On {
+	if relation.Source == definition {
 		to = relation.Target
 	} else {
 		to = relation.Source
 	}
-	return fmt.Sprintf("Remove%sTo%s", GetModelName(ctx, to), GetModelName(ctx, definition.On))
+	return fmt.Sprintf("Remove%sTo%s", GetModelName(ctx, to), GetModelName(ctx, definition))
 }
 
 func GetRepositoryMethodContextTransactionField(ctx context.Context) string {
@@ -122,7 +126,7 @@ func GetRepositoryMethodOptionName(ctx context.Context, methodName string) strin
 }
 
 func GetRepositoryGetSignature(ctx context.Context, repository *coredomaindefinition.Repository, repositoryPkg *model.GoPkg, modelPkg *model.GoPkg) *model.Function {
-	methodName := GetRepositoryGetMethod(ctx, repository)
+	methodName := GetRepositoryGetMethod(ctx, repository.On)
 	return &model.Function{
 		Name: methodName,
 		Args: []*model.Param{
@@ -166,7 +170,7 @@ func GetRepositoryGetSignature(ctx context.Context, repository *coredomaindefini
 }
 
 func GetRepositoryListSignature(ctx context.Context, repository *coredomaindefinition.Repository, repositoryPkg *model.GoPkg, modelPkg *model.GoPkg) *model.Function {
-	methodName := GetRepositoryListMethod(ctx, repository)
+	methodName := GetRepositoryListMethod(ctx, repository.On)
 	return &model.Function{
 		Name: methodName,
 		Args: []*model.Param{
@@ -212,7 +216,7 @@ func GetRepositoryListSignature(ctx context.Context, repository *coredomaindefin
 }
 
 func GetRepositoryCreateSignature(ctx context.Context, repository *coredomaindefinition.Repository, repositoryPkg *model.GoPkg, modelPkg *model.GoPkg) *model.Function {
-	methodName := GetRepositoryCreateMethod(ctx, repository)
+	methodName := GetRepositoryCreateMethod(ctx, repository.On)
 	return &model.Function{
 		Name: methodName,
 		Args: []*model.Param{
@@ -267,7 +271,7 @@ func GetRepositoryCreateSignature(ctx context.Context, repository *coredomaindef
 }
 
 func GetRepositoryUpdateSignature(ctx context.Context, repository *coredomaindefinition.Repository, repositoryPkg *model.GoPkg, modelPkg *model.GoPkg) *model.Function {
-	methodName := GetRepositoryUpdateMethod(ctx, repository)
+	methodName := GetRepositoryUpdateMethod(ctx, repository.On)
 	return &model.Function{
 		Name: methodName,
 		Args: []*model.Param{
@@ -322,7 +326,7 @@ func GetRepositoryUpdateSignature(ctx context.Context, repository *coredomaindef
 }
 
 func GetRepositoryDeleteSignature(ctx context.Context, repository *coredomaindefinition.Repository, repositoryPkg *model.GoPkg, modelPkg *model.GoPkg) *model.Function {
-	methodName := GetRepositoryDeleteMethod(ctx, repository)
+	methodName := GetRepositoryDeleteMethod(ctx, repository.On)
 	return &model.Function{
 		Name: methodName,
 		Args: []*model.Param{
@@ -369,4 +373,63 @@ func GetPreloadName(ctx context.Context, m *coredomaindefinition.Model) string {
 
 func GetGormDomainRepositoryName(ctx context.Context, m *coredomaindefinition.Domain) string {
 	return stringtool.UpperFirstLetter(m.Name) + "Repository"
+}
+
+func GetRepositoryMethodSignature(
+	ctx context.Context, method *coredomaindefinition.RepositoryMethod, repositoryPkg *model.GoPkg, typeDefToType func(ctx context.Context, typeDefinition coredomaindefinition.Type) (model.Type, error),
+) (*model.Function, error) {
+	f := &model.Function{
+		Name: stringtool.UpperFirstLetter(method.Name),
+		Args: []*model.Param{
+			{
+				Name: "ctx",
+				Type: &model.PkgReference{
+					Pkg: consts.CommonPkgs["context"],
+					Reference: &model.ExternalType{
+						Type: "Context",
+					},
+				},
+			},
+		},
+		Results: []*model.Param{},
+	}
+
+	for _, param := range method.Params {
+		t, err := typeDefToType(ctx, param.Type)
+		if err != nil {
+			return nil, err
+		}
+		f.Args = append(f.Args, &model.Param{
+			Name: param.Name,
+			Type: t,
+		})
+	}
+
+	f.Args = append(f.Args, &model.Param{
+		Name: REPOSIOTY_METHOD_CONTEXT_OPTS_NAME,
+		Type: &model.VariaidicType{
+			Type: &model.PkgReference{
+				Pkg: repositoryPkg,
+				Reference: &model.ExternalType{
+					Type: GetRepositoryMethodOptionName(ctx, stringtool.UpperFirstLetter(method.Name)),
+				},
+			},
+		},
+	})
+
+	for _, result := range method.Results {
+		t, err := typeDefToType(ctx, result)
+		if err != nil {
+			return nil, err
+		}
+		f.Results = append(f.Results, &model.Param{
+			Type: t,
+		})
+	}
+
+	f.Results = append(f.Results, &model.Param{
+		Type: model.PrimitiveTypeError,
+	})
+
+	return f, nil
 }

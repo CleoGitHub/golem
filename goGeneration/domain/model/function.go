@@ -44,7 +44,7 @@ func (t Function) SubTypes() []Type {
 }
 
 // Add copy function
-func (t *Function) Copy() Type {
+func (t *Function) Copy() *Function {
 	return &Function{
 		Name:    t.Name,
 		Args:    Params(t.Args).Copy(),
@@ -58,7 +58,7 @@ type Functions []*Function
 func (t Functions) Copy() Functions {
 	ts := []*Function{}
 	for _, arg := range t {
-		ts = append(ts, arg.Copy().(*Function))
+		ts = append(ts, arg.Copy())
 	}
 	return ts
 }

@@ -22,9 +22,9 @@ func (r *PkgReference) SubTypes() []Type {
 	return []Type{r.Reference}
 }
 
-func (r *PkgReference) Copy() Type {
+func (r *PkgReference) Copy() *PkgReference {
 	return &PkgReference{
 		Pkg:       r.Pkg,
-		Reference: r.Reference.Copy(),
+		Reference: Copy(r.Reference),
 	}
 }

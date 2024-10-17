@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cleogithub/golem-common/pkg/stringtool"
 	"github.com/cleogithub/golem/coredomaindefinition"
 	"github.com/cleogithub/golem/goGeneration/domain/consts"
 	"github.com/cleogithub/golem/goGeneration/domain/model"
@@ -13,6 +14,8 @@ import (
 // Store model definition to build and then build on Build method
 // Only build on Build method as order is important
 type domainBuilder struct {
+	*EmptyBuilder
+
 	Definition *coredomaindefinition.Domain
 
 	// default model fields are added to all models
@@ -21,11 +24,7 @@ type domainBuilder struct {
 	// INTERNAL
 
 	// if error happened during build, error is returned on Build method
-	Err error
-
-	ModelBuilders          []*ModelBuilder
-	RepositoryBuilders     []*RepositoryBuilder
-	GormRepositoryBuilders []*GormRepositoryBuilder
+	err error
 
 	// Store definition to build in order to build in normal order but call it in disered order
 	ModelDefinitionsToBuild      []*coredomaindefinition.Model
@@ -34,46 +33,9 @@ type domainBuilder struct {
 	CRUDToBuild                  []*coredomaindefinition.CRUD
 	UsecaseDefinitionsToBuild    []*coredomaindefinition.Usecase
 
-	// // Store definition to model
-	ModelDefinitionToModel           map[*coredomaindefinition.Model]*model.Model
-	ModelToModelDefinition           map[*model.Model]*coredomaindefinition.Model
-	RepositoryDefinitionToRepository map[*coredomaindefinition.Repository]*model.Repository
-	// UsecaseDefinitionToUsecase       map[*coredomaindefinition.Usecase]*model.Usecase
-	RelationToRelationDefinition map[*model.Relation]*coredomaindefinition.Relation
-	ModelToRepository            map[*model.Model]*model.Repository
-	// RepoToDomainRepoGetEntityRepoMethod map[*model.Repository]*model.Function
-	ModelToGormModel map[*model.Model]*model.GormModel
-	Domain           *model.Domain
-	Models           []*model.Model
-	Repositories     []*model.Repository
-
-	// Repository elements
-	Ordering         *model.Struct
-	Pagination       *model.Struct
-	Transaction      *model.Interface
-	RepositoryErrors map[string]*model.Var
-
-	// // Usecase elements
-	DomainUsecase *model.Interface
-	// UsecaseCRUDImpl            *model.Struct
-	FieldToParamUsecaseRequest map[*model.Field]*coredomaindefinition.Param
-	CRUDActionToUsecase        map[*coredomaindefinition.CRUDAction]*model.Usecase
-	FieldToValidationRules     map[*model.Field][]*coredomaindefinition.Validation
-	// CRUDCreateRequest          map[*model.Model]*model.Struct
-	// CRUDUpdateRequest          map[*model.Model]*model.Struct
-	// CRUDDeleteRequest          map[*model.Model]*model.Struct
-	// CRUDGetRequest             map[*model.Model]*model.Struct
-	// CRUDListRequest            map[*model.Model]*model.Struct
-
-	ModelUsecaseStruct map[*model.Model]*model.Struct
-
-	// // Validator of struct request
-	Validator            *model.Interface
-	UsecaseValidatorImpl *model.Struct
+	Domain *model.Domain
 
 	RelationGraph *RelationGraph
-
-	GormDomainRepositoryBuilder *GormDomainRepositoryBuilder
 
 	builders []Builder
 }
@@ -86,20 +48,7 @@ func NewDomainBuilder(
 	builder := &domainBuilder{
 		Definition:         definition,
 		DefaultModelFields: defaultModelFields,
-
-		// RepositoryDefinitionToRepository: map[*coredomaindefinition.Repository]*model.Repository{},
-		RelationToRelationDefinition: map[*model.Relation]*coredomaindefinition.Relation{},
-		ModelDefinitionToModel:       map[*coredomaindefinition.Model]*model.Model{},
-		ModelToModelDefinition:       map[*model.Model]*coredomaindefinition.Model{},
-		ModelUsecaseStruct:           map[*model.Model]*model.Struct{},
-		FieldToParamUsecaseRequest:   map[*model.Field]*coredomaindefinition.Param{},
-		CRUDActionToUsecase:          map[*coredomaindefinition.CRUDAction]*model.Usecase{},
-		// ModelToRepository:                map[*model.Model]*model.Repository{},
-		// RepoToDomainRepoGetEntityRepoMethod: map[*model.Repository]*model.Function{},
-		// RepositoryErrors:       map[string]*model.Var{},
-		FieldToValidationRules: map[*model.Field][]*coredomaindefinition.Validation{},
-		// ModelToGormModel:       map[*model.Model]*model.GormModel{},
-		RelationGraph: &RelationGraph{},
+		RelationGraph:      &RelationGraph{},
 
 		Domain: &model.Domain{
 			Name: definition.Name,
@@ -107,7 +56,16 @@ func NewDomainBuilder(
 	}
 	builder.setArchitecture(ctx)
 
+	builder.builders = append(builder.builders, NewDomainRepositoryBuilder(ctx, builder))
 	builder.builders = append(builder.builders, NewGormDomainRepositoryBuilder(ctx, builder, builder.Definition))
+	builder.builders = append(builder.builders, NewDomainUsecaseBuilder(ctx, builder))
+	builder.builders = append(builder.builders, NewGormDomainRepositoryBuilder(ctx, builder, builder.Definition))
+
+	if definition.Controllers.Http {
+		builder.builders = append(builder.builders, NewHttpControllerBuilder(ctx, definition, builder.Domain))
+		builder.builders = append(builder.builders, NewHttpClientBuilder(ctx, definition, builder.Domain))
+		builder.builders = append(builder.builders, NewJSBuilder(ctx, definition, builder))
+	}
 
 	return builder
 }
@@ -146,6 +104,14 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 				builder.Definition.Name,
 			),
 		},
+		HttpControllerPkg: &model.GoPkg{
+			ShortName: "httpadapter",
+			Alias:     "httpadapter",
+			FullName: fmt.Sprintf(
+				"%s/adapter/controller/httpadapter",
+				builder.Definition.Name,
+			),
+		},
 		GormAdapterPkg: &model.GoPkg{
 			ShortName: "gormadapter",
 			Alias:     "gormadapter",
@@ -170,12 +136,35 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 	return builder
 }
 
-func (domainBuilder *domainBuilder) NewModelBuilder(ctx context.Context, modelDefinition *coredomaindefinition.Model) Builder {
-	return NewModelBuilder(ctx, domainBuilder, modelDefinition, domainBuilder.DefaultModelFields)
+func (domainBuilder *domainBuilder) AddBuilder(ctx context.Context, builder Builder) {
+	if domainBuilder.err != nil {
+		return
+	}
+	for _, m := range domainBuilder.ModelDefinitionsToBuild {
+		builder.WithModel(ctx, m)
+	}
+
+	for _, r := range domainBuilder.RepositoryDefinitionsToBuild {
+		builder.WithRepository(ctx, r)
+	}
+
+	for _, r := range domainBuilder.RelationDefinitionsToBuild {
+		builder.WithRelation(ctx, r)
+	}
+
+	for _, c := range domainBuilder.CRUDToBuild {
+		builder.WithCRUD(ctx, c)
+	}
+
+	for _, c := range domainBuilder.UsecaseDefinitionsToBuild {
+		builder.WithUsecase(ctx, c)
+	}
+
+	domainBuilder.builders = append(domainBuilder.builders, builder)
 }
 
-func (domainBuilder *domainBuilder) NewRepositoryBuilder(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) Builder {
-	return NewRepositoryBuilder(ctx, domainBuilder, repositoryDefinition)
+func (domainBuilder *domainBuilder) NewModelBuilder(ctx context.Context, modelDefinition *coredomaindefinition.Model) Builder {
+	return NewModelBuilder(ctx, domainBuilder, modelDefinition, domainBuilder.DefaultModelFields)
 }
 
 func (domainBuilder *domainBuilder) NewGormRepositoryBuilder(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) Builder {
@@ -202,19 +191,16 @@ func (domainBuilder *domainBuilder) GetGormAdapterPackage() *model.GoPkg {
 	return domainBuilder.Domain.Architecture.GormAdapterPkg
 }
 
+func (domainBuilder *domainBuilder) GetHttpControllerPackage() *model.GoPkg {
+	return domainBuilder.Domain.Architecture.HttpControllerPkg
+}
+
 func (domainBuilder *domainBuilder) GetSdkPackage() *model.GoPkg {
 	return domainBuilder.Domain.Architecture.SdkPkg
 }
 
-func (builder *domainBuilder) GetModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) (*model.Model, error) {
-	if m, ok := builder.ModelDefinitionToModel[modelDefinition]; ok {
-		return m, nil
-	}
-	return nil, NewErrModelNotFound(modelDefinition.Name)
-}
-
 func (builder *domainBuilder) WithModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) *domainBuilder {
-	if builder.Err != nil {
+	if builder.err != nil {
 		return builder
 	}
 
@@ -222,141 +208,113 @@ func (builder *domainBuilder) WithModel(ctx context.Context, modelDefinition *co
 
 	builder.ModelDefinitionsToBuild = append(builder.ModelDefinitionsToBuild, modelDefinition)
 
+	for _, b := range builder.builders {
+		b.WithModel(ctx, modelDefinition)
+	}
+
 	return builder
 }
 
 func (builder *domainBuilder) WithRepository(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) *domainBuilder {
-	if builder.Err != nil {
+	if builder.err != nil {
 		return builder
 	}
 
-	builder.builders = append(builder.builders, builder.NewRepositoryBuilder(ctx, repositoryDefinition))
 	builder.builders = append(builder.builders, builder.NewGormRepositoryBuilder(ctx, repositoryDefinition))
 
 	builder.RepositoryDefinitionsToBuild = append(builder.RepositoryDefinitionsToBuild, repositoryDefinition)
+
+	for _, b := range builder.builders {
+		b.WithRepository(ctx, repositoryDefinition)
+	}
 
 	return builder
 }
 
 func (builder *domainBuilder) WithRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) *domainBuilder {
-	if builder.Err != nil {
+	if builder.err != nil {
 		return builder
 	}
 
 	builder.RelationDefinitionsToBuild = append(builder.RelationDefinitionsToBuild, relationDefinition)
 	builder.RelationGraph.addRelationToGraph(ctx, relationDefinition)
 
+	for _, b := range builder.builders {
+		b.WithRelation(ctx, relationDefinition)
+	}
+
 	return builder
 }
 
 func (builder *domainBuilder) WithCRUD(ctx context.Context, crudDefinition *coredomaindefinition.CRUD) *domainBuilder {
-	if builder.Err != nil {
+	if builder.err != nil {
 		return builder
 	}
 
 	builder.CRUDToBuild = append(builder.CRUDToBuild, crudDefinition)
 
+	for _, b := range builder.builders {
+		b.WithCRUD(ctx, crudDefinition)
+	}
+
 	return builder
 }
 
 func (builder *domainBuilder) WithUsecase(ctx context.Context, usecaseDefinition *coredomaindefinition.Usecase) *domainBuilder {
-	if builder.Err != nil {
+	if builder.err != nil {
 		return builder
 	}
 
 	builder.UsecaseDefinitionsToBuild = append(builder.UsecaseDefinitionsToBuild, usecaseDefinition)
 
+	for _, b := range builder.builders {
+		b.WithUsecase(ctx, usecaseDefinition)
+	}
+
 	return builder
 }
 
 func (builder *domainBuilder) Build(ctx context.Context) (*model.Domain, error) {
-	if builder.Err != nil {
-		return nil, builder.Err
+	if builder.err != nil {
+		return nil, builder.err
 	}
 
-	builder.addRepositoryErrors(ctx)
-	builder.addPagination(ctx)
-	builder.addTransaction(ctx)
 	builder.addOrdering(ctx)
+	builder.addPagination(ctx)
 
-	builder.builders = append(builder.builders, NewGormDomainRepositoryBuilder(ctx, builder, builder.Definition))
+	// builder.builders = append(builder.builders, )
 
-	for _, modelDefinition := range builder.ModelDefinitionsToBuild {
-		for _, b := range builder.builders {
-			b.WithModel(ctx, modelDefinition)
-		}
-	}
-	for _, relationDefinition := range builder.RelationDefinitionsToBuild {
-		for _, b := range builder.builders {
-			b.WithRelation(ctx, relationDefinition)
-		}
-	}
-	// for _, crudDefinition := range builder.CRUDToBuild {
-	// 	builder.buildCRUD(ctx, crudDefinition)
-	// }
-
-	// for _, usecaseDefinition := range builder.UsecaseDefinitionsToBuild {
-	// 	builder.buildUsecase(ctx, usecaseDefinition)
-	// }
-
-	for _, usecase := range builder.Domain.Usecases {
-		usecase.Function.Args = append(usecase.Function.Args, &model.Param{
-			Name: "ctx",
-			Type: &model.PkgReference{
-				Pkg: consts.CommonPkgs["context"],
-				Reference: &model.ExternalType{
-					Type: "Context",
-				},
-			},
-		})
-		usecase.Function.Args = append(usecase.Function.Args, &model.Param{
-			Name: "request",
-			Type: &model.PointerType{
-				Type: &model.PkgReference{
-					Pkg:       builder.Domain.Architecture.UsecasePkg,
-					Reference: usecase.Request,
-				},
-			},
-		})
-		usecase.Function.Results = append(usecase.Function.Results, &model.Param{
-			Type: &model.PointerType{
-				Type: &model.PkgReference{
-					Pkg:       builder.Domain.Architecture.UsecasePkg,
-					Reference: usecase.Result,
-				},
-			},
-		})
-		usecase.Function.Results = append(usecase.Function.Results, &model.Param{
-			Type: model.PrimitiveTypeError,
-		})
-		builder.GetDomainUsecase(ctx).Methods = append(builder.GetDomainUsecase(ctx).Methods, usecase.Function)
-	}
-	// builder.buildUsecaseCRUDImplementation(ctx)
-	// builder.buildHttpController(ctx)
-	// builder.buildGormAdpater(ctx)
-	// builder.buildService(ctx)
-	// builder.buildHttpService(ctx)
-
-	// for _, modelBuilder := range builder.ModelBuilders {
-	// 	m, err := modelBuilder.Build(ctx)
-	// 	if err != nil {
-	// 		return nil, err
+	// for _, modelDefinition := range builder.ModelDefinitionsToBuild {
+	// 	for _, b := range builder.builders {
+	// 		b.WithModel(ctx, modelDefinition)
 	// 	}
-	// 	builder.Domain.ModelsV2 = append(builder.Domain.ModelsV2, m)
-
+	// }
+	// for _, relationDefinition := range builder.RelationDefinitionsToBuild {
+	// 	for _, b := range builder.builders {
+	// 		b.WithRelation(ctx, relationDefinition)
+	// 	}
+	// }
+	// for _, repositoryDefinition := range builder.RepositoryDefinitionsToBuild {
+	// 	for _, b := range builder.builders {
+	// 		b.WithRepository(ctx, repositoryDefinition)
+	// 	}
+	// }
+	// for _, crudDefinition := range builder.CRUDToBuild {
+	// 	for _, b := range builder.builders {
+	// 		b.WithCRUD(ctx, crudDefinition)
+	// 	}
+	// }
+	// for _, usecaseDefinition := range builder.UsecaseDefinitionsToBuild {
+	// 	for _, b := range builder.builders {
+	// 		b.WithUsecase(ctx, usecaseDefinition)
+	// 	}
 	// }
 
 	port, err := builder.buildRelationGraph(ctx)
 	if err != nil {
 		return nil, err
 	}
-	builder.Domain.Ports = append(builder.Domain.Ports, port)
-
-	port, err = builder.buildDomainRepository(ctx)
-	if err != nil {
-		return nil, err
-	}
-	builder.Domain.Ports = append(builder.Domain.Ports, port)
+	builder.Domain.Files = append(builder.Domain.Files, port)
 
 	for _, b := range builder.builders {
 		err := b.Build(ctx)
@@ -368,21 +326,222 @@ func (builder *domainBuilder) Build(ctx context.Context) (*model.Domain, error) 
 	return builder.Domain, nil
 }
 
-// func (builder *domainBuilder) buildDomainRepository(ctx context.Context) {
-// 	domainRepo := &model.Interface{
-// 		Name:    GetDomainRepositoryName(ctx, builder.Definition),
-// 		Methods: []*model.Function{},
-// 	}
+const (
+	ORDERING_NAME        = "Ordering"
+	ORDERING_ORDER       = "Order"
+	ORDERING_ORDERBY     = "OrderBy"
+	ORDERING_GET_ORDER   = "GetOrder"
+	ORDERING_GET_ORDERBY = "GetOrderBy"
+)
 
-// 	for _, repositoryBuilder := range builder.RepositoryBuilders {
-// 		domainRepo.Methods = append(domainRepo.Methods, repositoryBuilder.Methods...)
-// 	}
+var ASC = &model.Var{
+	Name:    "ASC",
+	Type:    model.PrimitiveTypeString,
+	Value:   "ASC",
+	IsConst: true,
+}
+var DESC = &model.Var{
+	Name:    "DESC",
+	Type:    model.PrimitiveTypeString,
+	Value:   "DESC",
+	IsConst: true,
+}
 
-// 	builder.Domain.Ports = append(builder.Domain.Ports, &model.File{
-// 		Name: GetDomainRepositoryName(ctx, builder.Definition),
-// 		Pkg:  builder.GetRepositoryPackage(),
-// 		Elements: []interface{}{
-// 			domainRepo,
-// 		},
-// 	})
-// }
+var ORDERING = &model.Struct{
+	Name:       ORDERING_NAME,
+	MethodName: stringtool.LowerFirstLetter(ORDERING_NAME),
+	Consts: []*model.Var{
+		ASC,
+		DESC,
+	},
+	Fields: []*model.Field{
+		{
+			Name: ORDERING_ORDER,
+			Type: model.PrimitiveTypeString,
+			Tags: []*model.Tag{
+				{
+					Name:   "json",
+					Values: []string{stringtool.LowerFirstLetter(ORDERING_ORDER)},
+				},
+			},
+		},
+		{
+			Name: ORDERING_ORDERBY,
+			Type: model.PrimitiveTypeString,
+			Tags: []*model.Tag{
+				{
+					Name:   "json",
+					Values: []string{stringtool.LowerFirstLetter(ORDERING_ORDERBY)},
+				},
+			},
+		},
+	},
+	Methods: []*model.Function{
+		{
+			Name: "GetOrder",
+			Results: []*model.Param{
+				{
+					Type: model.PrimitiveTypeString,
+				},
+			},
+			Content: func() (string, []*model.GoPkg) {
+				str := ""
+				str += fmt.Sprintf(
+					`if strings.ToUpper(%s.%s) != ASC && strings.ToUpper(%s.%s) != DESC { return ASC }`,
+					stringtool.LowerFirstLetter(ORDERING_NAME), ORDERING_ORDER, stringtool.LowerFirstLetter(ORDERING_NAME), ORDERING_ORDER,
+				) + consts.LN
+				str += fmt.Sprintf("return  strings.ToUpper(%s.%s)", stringtool.LowerFirstLetter(ORDERING_NAME), ORDERING_ORDER) + consts.LN
+				return str, []*model.GoPkg{consts.CommonPkgs["strings"]}
+			},
+		}, {
+			Name: "GetOrderBy",
+			Args: []*model.Param{
+				{
+					Name: "allowedOrderBys",
+					Type: &model.ArrayType{
+						Type: model.PrimitiveTypeString,
+					},
+				}, {
+					Name: "defaultOrderBy",
+					Type: model.PrimitiveTypeString,
+				},
+			},
+			Results: []*model.Param{
+				{
+					Type: model.PrimitiveTypeString,
+				},
+			},
+			Content: func() (string, []*model.GoPkg) {
+				str := ""
+				str += fmt.Sprintf(
+					`if slices.Contains(allowedOrderBys, %s.%s)  { return  %s.%s }`,
+					stringtool.LowerFirstLetter(ORDERING_NAME), ORDERING_ORDERBY,
+					stringtool.LowerFirstLetter(ORDERING_NAME), ORDERING_ORDERBY,
+				) + consts.LN
+				str += "return  defaultOrderBy" + consts.LN
+				return str, []*model.GoPkg{consts.CommonPkgs["slices"]}
+			},
+		},
+	},
+}
+
+func (b *domainBuilder) addOrdering(ctx context.Context) {
+	if b.err != nil {
+		return
+	}
+
+	b.Domain.Files = append(b.Domain.Files, &model.File{
+		Name: ORDERING_NAME,
+		Pkg:  b.GetModelPackage(),
+		Elements: []interface{}{
+			ORDERING,
+		},
+	})
+}
+
+const (
+	PAGINATION_NAME                   = "Pagination"
+	PAGINATION_Page                   = "Page"
+	PAGINATION_ItemsPerPage           = "ItemsPerPage"
+	PAGINATION_GetItemsPerPage        = "GetItemsPerPage"
+	PAGINATION_GetPage                = "GetPage"
+	PAGINATION_MIN_ITEMS_PER_PAGE     = "MIN_ITEMS_PER_PAGE"
+	PAGINATION_MAX_ITEMS_PER_PAGE     = "MAX_ITEMS_PER_PAGE"
+	PAGINATION_DEFAULT_ITEMS_PER_PAGE = "DEFAULT_ITEMS_PER_PAGE"
+)
+
+var PAGINATION = &model.Struct{
+	Name:       PAGINATION_NAME,
+	MethodName: stringtool.LowerFirstLetter(PAGINATION_NAME),
+	Consts: []*model.Var{
+		{
+			Name:    PAGINATION_MIN_ITEMS_PER_PAGE,
+			Type:    model.PrimitiveTypeInt,
+			Value:   5,
+			IsConst: true,
+		},
+		{
+			Name:    PAGINATION_MAX_ITEMS_PER_PAGE,
+			Type:    model.PrimitiveTypeInt,
+			Value:   100,
+			IsConst: true,
+		},
+		{
+			Name:    PAGINATION_DEFAULT_ITEMS_PER_PAGE,
+			Type:    model.PrimitiveTypeInt,
+			Value:   30,
+			IsConst: true,
+		},
+	},
+	Fields: []*model.Field{
+		{
+			Name: PAGINATION_Page,
+			Type: model.PrimitiveTypeInt,
+			Tags: []*model.Tag{
+				{
+					Name:   "json",
+					Values: []string{stringtool.LowerFirstLetter(PAGINATION_Page)},
+				},
+			},
+		}, {
+			Name: PAGINATION_ItemsPerPage,
+			Type: model.PrimitiveTypeInt,
+			Tags: []*model.Tag{
+				{
+					Name:   "json",
+					Values: []string{stringtool.LowerFirstLetter(PAGINATION_GetItemsPerPage)},
+				},
+			},
+		},
+	},
+	Methods: []*model.Function{
+		{
+			Name: PAGINATION_GetPage,
+			Results: []*model.Param{
+				{
+					Type: model.PrimitiveTypeInt,
+				},
+			},
+			Content: func() (string, []*model.GoPkg) {
+				str := ""
+				str += fmt.Sprintf("if %s.%s < 1 { return 1 }", stringtool.LowerFirstLetter(PAGINATION_NAME), PAGINATION_Page) + consts.LN
+				str += fmt.Sprintf("return %s.%s", stringtool.LowerFirstLetter(PAGINATION_NAME), PAGINATION_Page) + consts.LN
+				return str, nil
+			},
+		},
+		{
+			Name: "GetItemsPerPage",
+			Results: []*model.Param{
+				{
+					Type: model.PrimitiveTypeInt,
+				},
+			},
+			Content: func() (string, []*model.GoPkg) {
+				str := ""
+				str += fmt.Sprintf(
+					"if %[1]s.%[2]s < %s || %[1]s.%[2]s > %[4]s { return %s }",
+					stringtool.LowerFirstLetter(PAGINATION_NAME), PAGINATION_Page, PAGINATION_MIN_ITEMS_PER_PAGE, PAGINATION_MIN_ITEMS_PER_PAGE, PAGINATION_DEFAULT_ITEMS_PER_PAGE,
+				) + consts.LN
+				str += fmt.Sprintf("return %s.%s ", stringtool.LowerFirstLetter(PAGINATION_NAME), PAGINATION_Page) + consts.LN
+				return str, nil
+			},
+		},
+	},
+}
+
+func (builder *domainBuilder) addPagination(ctx context.Context) {
+	if builder.err != nil {
+		return
+	}
+
+	builder.Domain.Files = append(builder.Domain.Files, &model.File{
+		Name: PAGINATION_NAME,
+		Pkg:  builder.GetModelPackage(),
+		Elements: []interface{}{
+			WHERE_OPERATOR_TYPE,
+			WHERE,
+			WHERE_OPERATOR,
+			PAGINATION,
+		},
+	})
+}

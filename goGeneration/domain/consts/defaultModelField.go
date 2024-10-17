@@ -2,6 +2,8 @@ package consts
 
 import "github.com/cleogithub/golem/coredomaindefinition"
 
+const ID = "Id"
+
 var DefaultModelFields = []*coredomaindefinition.Field{
 	{
 		Name: "id",
@@ -15,8 +17,4 @@ var DefaultModelFields = []*coredomaindefinition.Field{
 		Name: "updatedAt",
 		Type: coredomaindefinition.PrimitiveTypeDateTime,
 	},
-	// {
-	// 	Name: "deletedAt",
-	// 	Type: coredomaindefinition.PrimitiveTypeDateTime,
-	// },
 }

@@ -8,4 +8,5 @@ type Domain struct {
 	Repositories  []*Repository
 	Usecases      []*Usecase
 	CRUDs         []*CRUD
+	Controllers   Controllers
 }

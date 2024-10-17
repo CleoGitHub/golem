@@ -1,5 +1,7 @@
 package model
 
+import "reflect"
+
 type Var struct {
 	Name    string
 	Type    Type
@@ -8,9 +10,14 @@ type Var struct {
 }
 
 func (c *Var) Copy() *Var {
+	// use Copy on c.Type with refelction
+	v := reflect.ValueOf(c.Type)
+	results := v.MethodByName("Copy").Call([]reflect.Value{})
+	typeCopied := results[0].Interface().(Type)
+
 	return &Var{
 		Name:  c.Name,
-		Type:  c.Type.Copy(),
+		Type:  typeCopied,
 		Value: c.Value,
 	}
 }

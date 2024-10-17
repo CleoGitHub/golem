@@ -8,7 +8,7 @@ type Param struct {
 func (p *Param) Copy() *Param {
 	return &Param{
 		Name: p.Name,
-		Type: p.Type.Copy(),
+		Type: Copy(p.Type),
 	}
 }
 

@@ -16,6 +16,8 @@ const (
 )
 
 type RepositoryBuilder struct {
+	*EmptyBuilder
+
 	DomainBuilder *domainBuilder
 	Definition    *coredomaindefinition.Repository
 	Repository    *model.File
@@ -81,20 +83,20 @@ func NewRepositoryBuilder(
 	}
 	for _, f := range builder.DomainBuilder.DefaultModelFields {
 		builder.FieldToColumn.Values = append(builder.FieldToColumn.Values, model.MapValue{
-			Key:   GetFieldName(ctx, f),
+			Key:   GetFieldName(ctx, f.Name),
 			Value: GetColumnName(ctx, f),
 		})
-		builder.AllowedOrderBys.Values = append(builder.AllowedOrderBys.Values, GetFieldName(ctx, f))
-		builder.AllowedWheres.Values = append(builder.AllowedWheres.Values, GetFieldName(ctx, f))
+		builder.AllowedOrderBys.Values = append(builder.AllowedOrderBys.Values, GetFieldName(ctx, f.Name))
+		builder.AllowedWheres.Values = append(builder.AllowedWheres.Values, GetFieldName(ctx, f.Name))
 	}
 
 	for _, f := range definition.On.Fields {
 		builder.FieldToColumn.Values = append(builder.FieldToColumn.Values, model.MapValue{
-			Key:   GetFieldName(ctx, f),
+			Key:   GetFieldName(ctx, f.Name),
 			Value: GetColumnName(ctx, f),
 		})
-		builder.AllowedOrderBys.Values = append(builder.AllowedOrderBys.Values, GetFieldName(ctx, f))
-		builder.AllowedWheres.Values = append(builder.AllowedWheres.Values, GetFieldName(ctx, f))
+		builder.AllowedOrderBys.Values = append(builder.AllowedOrderBys.Values, GetFieldName(ctx, f.Name))
+		builder.AllowedWheres.Values = append(builder.AllowedWheres.Values, GetFieldName(ctx, f.Name))
 	}
 	if definition.On.Activable {
 		builder.FieldToColumn.Values = append(builder.FieldToColumn.Values, model.MapValue{
@@ -116,16 +118,53 @@ func NewRepositoryBuilder(
 	builder.addUpdateMethod(ctx)
 	builder.addDeleteMethod(ctx)
 
+	builder.adCustomMethods(ctx)
+
 	return builder
 }
 
-func (builder *RepositoryBuilder) WithRelation(ctx context.Context, relation *coredomaindefinition.Relation) Builder {
+func (builder *RepositoryBuilder) adCustomMethods(ctx context.Context) {
 	if builder.Err != nil {
-		return builder
+		return
+	}
+
+	for _, method := range builder.Definition.Methods {
+		builder.adCustomMethod(ctx, method)
+	}
+}
+
+func (builder *RepositoryBuilder) adCustomMethod(ctx context.Context, method *coredomaindefinition.RepositoryMethod) {
+	if builder.Err != nil {
+		return
+	}
+
+	f, err := GetRepositoryMethodSignature(ctx, method, builder.DomainBuilder.GetRepositoryPackage(), builder.DomainBuilder.TypeDefinitionToType)
+	if err != nil {
+		builder.Err = err
+		return
+	}
+
+	methodCtx := &model.Struct{
+		Name:   GetMethodContextName(ctx, f.Name),
+		Fields: []*model.Field{},
+	}
+
+	builder.addDefaultContextField(ctx, methodCtx)
+
+	builder.Repository.Elements = append(builder.Repository.Elements, methodCtx)
+
+	builder.addContextFieldOpt(ctx, methodCtx, f.Name)
+
+	builder.Methods = append(builder.Methods, f)
+}
+
+func (builder *RepositoryBuilder) WithRelation(ctx context.Context, relation *coredomaindefinition.Relation) {
+	if builder.Err != nil {
+		return
 	}
 
 	if relation.Source != builder.Definition.On && relation.Target != builder.Definition.On {
-		return builder
+		return
 	}
 
 	if !IsRelationMultiple(ctx, builder.Definition.On, relation) {
@@ -145,18 +184,6 @@ func (builder *RepositoryBuilder) WithRelation(ctx context.Context, relation *co
 	} else if relation.Type == coredomaindefinition.RelationTypeManyToMany {
 		builder.addManyToManyMethods(ctx, relation)
 	}
-
-	return builder
-}
-
-// WithModel implements Builder.
-func (builder *RepositoryBuilder) WithModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) Builder {
-	return builder
-}
-
-// WithRepository implements Builder.
-func (builder *RepositoryBuilder) WithRepository(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) Builder {
-	return builder
 }
 
 func (builder *RepositoryBuilder) addGetMethod(ctx context.Context) {
@@ -164,7 +191,7 @@ func (builder *RepositoryBuilder) addGetMethod(ctx context.Context) {
 		return
 	}
 
-	methodName := GetRepositoryGetMethod(ctx, builder.Definition)
+	methodName := GetRepositoryGetMethod(ctx, builder.Definition.On)
 
 	methodCtx := &model.Struct{
 		Name:   GetMethodContextName(ctx, methodName),
@@ -191,19 +218,26 @@ func (builder *RepositoryBuilder) addListMethod(ctx context.Context) {
 		return
 	}
 
-	methodName := GetRepositoryListMethod(ctx, builder.Definition)
+	methodName := GetRepositoryListMethod(ctx, builder.Definition.On)
 
 	methodCtx := &model.Struct{
 		Name: GetMethodContextName(ctx, methodName),
 		Fields: []*model.Field{
 			{
 				Name: PAGINATION_NAME,
-				Type: &model.PointerType{
-					Type: &model.PkgReference{
-						Pkg: builder.DomainBuilder.GetRepositoryPackage(),
-						Reference: &model.ExternalType{
-							Type: PAGINATION_NAME,
-						},
+				Type: &model.PkgReference{
+					Pkg: builder.DomainBuilder.GetModelPackage(),
+					Reference: &model.ExternalType{
+						Type: PAGINATION_NAME,
+					},
+				},
+			},
+			{
+				Name: ORDERING_NAME,
+				Type: &model.PkgReference{
+					Pkg: builder.DomainBuilder.GetModelPackage(),
+					Reference: &model.ExternalType{
+						Type: ORDERING_NAME,
 					},
 				},
 			},
@@ -231,7 +265,7 @@ func (builder *RepositoryBuilder) addCreateMethod(ctx context.Context) {
 	}
 
 	methodCtx := &model.Struct{
-		Name:   GetMethodContextName(ctx, GetRepositoryCreateMethod(ctx, builder.Definition)),
+		Name:   GetMethodContextName(ctx, GetRepositoryCreateMethod(ctx, builder.Definition.On)),
 		Fields: []*model.Field{},
 	}
 
@@ -239,7 +273,7 @@ func (builder *RepositoryBuilder) addCreateMethod(ctx context.Context) {
 
 	builder.Repository.Elements = append(builder.Repository.Elements, methodCtx)
 
-	builder.addContextFieldOpt(ctx, methodCtx, GetRepositoryCreateMethod(ctx, builder.Definition))
+	builder.addContextFieldOpt(ctx, methodCtx, GetRepositoryCreateMethod(ctx, builder.Definition.On))
 
 	builder.Methods = append(builder.Methods, GetRepositoryCreateSignature(
 		ctx,
@@ -254,7 +288,7 @@ func (builder *RepositoryBuilder) addUpdateMethod(ctx context.Context) {
 		return
 	}
 
-	methodName := GetRepositoryUpdateMethod(ctx, builder.Definition)
+	methodName := GetRepositoryUpdateMethod(ctx, builder.Definition.On)
 
 	methodCtx := &model.Struct{
 		Name:   GetMethodContextName(ctx, methodName),
@@ -281,7 +315,7 @@ func (builder *RepositoryBuilder) addDeleteMethod(ctx context.Context) {
 	}
 
 	methodCtx := &model.Struct{
-		Name:   GetMethodContextName(ctx, GetRepositoryDeleteMethod(ctx, builder.Definition)),
+		Name:   GetMethodContextName(ctx, GetRepositoryDeleteMethod(ctx, builder.Definition.On)),
 		Fields: []*model.Field{},
 	}
 
@@ -289,7 +323,7 @@ func (builder *RepositoryBuilder) addDeleteMethod(ctx context.Context) {
 
 	builder.Repository.Elements = append(builder.Repository.Elements, methodCtx)
 
-	builder.addContextFieldOpt(ctx, methodCtx, GetRepositoryDeleteMethod(ctx, builder.Definition))
+	builder.addContextFieldOpt(ctx, methodCtx, GetRepositoryDeleteMethod(ctx, builder.Definition.On))
 
 	builder.Methods = append(builder.Methods, GetRepositoryDeleteSignature(
 		ctx,
@@ -304,7 +338,7 @@ func (builder *RepositoryBuilder) addManyToManyMethods(ctx context.Context, rela
 		return
 	}
 
-	methodName := GetRepositoryAddRelationMethod(ctx, builder.Definition, relation)
+	methodName := GetRepositoryAddRelationMethod(ctx, builder.Definition.On, relation)
 
 	methodCtx := &model.Struct{
 		Name:   GetMethodContextName(ctx, methodName),
@@ -363,7 +397,7 @@ func (builder *RepositoryBuilder) addManyToManyMethods(ctx context.Context, rela
 		},
 	})
 
-	methodName = GetRepositoryRemoveRelationMethod(ctx, builder.Definition, relation)
+	methodName = GetRepositoryRemoveRelationMethod(ctx, builder.Definition.On, relation)
 
 	methodCtx = &model.Struct{
 		Name:   GetMethodContextName(ctx, methodName),
@@ -451,7 +485,7 @@ func (builder *RepositoryBuilder) addRetriveMethodDefaultContextField(ctx contex
 				Type: &model.PkgReference{
 					Pkg: builder.DomainBuilder.GetRepositoryPackage(),
 					Reference: &model.ExternalType{
-						Type: PAGINATION_WHERE,
+						Type: REPOSITORY_WHERE,
 					},
 				},
 			},
@@ -459,9 +493,9 @@ func (builder *RepositoryBuilder) addRetriveMethodDefaultContextField(ctx contex
 	})
 }
 
-func (builder *RepositoryBuilder) addContextFieldOpt(ctx context.Context, methodContext *model.Struct, methodName string) *RepositoryBuilder {
+func (builder *RepositoryBuilder) addContextFieldOpt(ctx context.Context, methodContext *model.Struct, methodName string) {
 	if builder.Err != nil {
-		return builder
+		return
 	}
 
 	optGetter := &model.TypeDefinition{
@@ -472,7 +506,7 @@ func (builder *RepositoryBuilder) addContextFieldOpt(ctx context.Context, method
 
 	builder.Repository.Elements = append(builder.Repository.Elements, &model.Var{
 		Name:    methodName,
-		Type:    model.PrimitiveTypeInt,
+		Type:    &model.ExternalType{Type: methodName + "OptGettter"},
 		Value:   0,
 		IsConst: true,
 	})
@@ -497,7 +531,7 @@ func (builder *RepositoryBuilder) addContextFieldOpt(ctx context.Context, method
 
 	for _, field := range methodContext.Fields {
 		opt := &model.Function{
-			Name: fmt.Sprintf("%sWith%s", methodName, field.Name),
+			Name: fmt.Sprintf("%s%s", methodName, GetOptName(ctx, field.Name)),
 			Args: []*model.Param{
 				{
 					Name: stringtool.LowerFirstLetter(field.Name),
@@ -522,7 +556,7 @@ func (builder *RepositoryBuilder) addContextFieldOpt(ctx context.Context, method
 		builder.Repository.Elements = append(builder.Repository.Elements, opt)
 
 		getOpt := &model.Function{
-			Name: fmt.Sprintf("With%s", field.Name),
+			Name: GetOptName(ctx, field.Name),
 			On:   optGetter,
 			Args: []*model.Param{
 				{
@@ -549,8 +583,10 @@ func (builder *RepositoryBuilder) addContextFieldOpt(ctx context.Context, method
 		}
 		builder.Repository.Elements = append(builder.Repository.Elements, getOpt)
 	}
+}
 
-	return builder
+func (builder *RepositoryBuilder) addToHttpService(ctx context.Context, method *model.Function, request *model.Struct, response *model.Struct) {
+
 }
 
 func (builder *RepositoryBuilder) Build(ctx context.Context) error {
@@ -558,7 +594,7 @@ func (builder *RepositoryBuilder) Build(ctx context.Context) error {
 		return builder.Err
 	}
 
-	builder.DomainBuilder.Domain.Ports = append(builder.DomainBuilder.Domain.Ports, builder.Repository)
+	builder.DomainBuilder.Domain.Files = append(builder.DomainBuilder.Domain.Files, builder.Repository)
 
 	return nil
 }

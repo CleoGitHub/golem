@@ -26,7 +26,7 @@ func (s *Struct) GetMethodName() string {
 	return stringtool.LowerFirstLetter(s.Name)
 }
 
-func (s *Struct) Copy() Type {
+func (s *Struct) Copy() *Struct {
 	return &Struct{
 		Consts:  ArrayConsts(s.Consts).Copy(),
 		Name:    s.Name,

@@ -7,7 +7,6 @@ var _ Type = &MapType{}
 var _ Type = &ExternalType{}
 var _ Type = &PointerType{}
 var _ Type = &VariaidicType{}
-var _ Type = &GormModel{}
 var _ Type = &Function{}
 var _ Type = &PkgReference{}
 
@@ -28,8 +27,6 @@ type Type interface {
 	GetType(...GetTypeOpt) string
 	// SubTypes return all types used to stringify the type
 	SubTypes() []Type
-	// Copy return a copy of the type
-	Copy() Type
 }
 
 type PrimitiveType string
@@ -55,7 +52,7 @@ func (t PrimitiveType) SubTypes() []Type {
 	return []Type{}
 }
 
-func (t PrimitiveType) Copy() Type {
+func (t PrimitiveType) Copy() PrimitiveType {
 	return t
 }
 
@@ -74,8 +71,8 @@ func (t *ArrayType) SubTypes() []Type {
 	return append(ts, t.Type.SubTypes()...)
 }
 
-func (t *ArrayType) Copy() Type {
-	return &ArrayType{Type: t.Type.Copy()}
+func (t *ArrayType) Copy() *ArrayType {
+	return &ArrayType{Type: Copy(t)}
 }
 
 type MapType struct {
@@ -94,10 +91,10 @@ func (t *MapType) SubTypes() []Type {
 	return append(ts, t.Value.SubTypes()...)
 }
 
-func (t *MapType) Copy() Type {
+func (t *MapType) Copy() *MapType {
 	return &MapType{
-		Key:   t.Key.Copy(),
-		Value: t.Value.Copy(),
+		Key:   Copy(t.Key),
+		Value: Copy(t.Value),
 	}
 }
 
@@ -115,8 +112,8 @@ func (t *PointerType) SubTypes() []Type {
 	return append(ts, t.Type.SubTypes()...)
 }
 
-func (t *PointerType) Copy() Type {
-	return &PointerType{Type: t.Type.Copy()}
+func (t *PointerType) Copy() *PointerType {
+	return &PointerType{Type: Copy(t)}
 }
 
 type ExternalType struct {
@@ -131,7 +128,7 @@ func (t *ExternalType) SubTypes() []Type {
 	return []Type{}
 }
 
-func (t *ExternalType) Copy() Type {
+func (t *ExternalType) Copy() *ExternalType {
 	return &ExternalType{Type: t.Type}
 }
 
@@ -150,6 +147,16 @@ func (t *VariaidicType) SubTypes() []Type {
 	return append(ts, t.Type.SubTypes()...)
 }
 
-func (t *VariaidicType) Copy() Type {
-	return &VariaidicType{Type: t.Type.Copy()}
+func (t *VariaidicType) Copy() *VariaidicType {
+	return &VariaidicType{Type: Copy(t)}
+}
+
+func Copy(t Type) Type {
+	return t
+	// // use Copy on c.Type with refelction
+	// v := reflect.ValueOf(t)
+	// results := v.MethodByName("Copy").Call([]reflect.Value{})
+	// typeCopied := results[0].Interface().(Type)
+
+	// return typeCopied
 }

@@ -9,9 +9,9 @@ type Usecase struct {
 
 func (u *Usecase) Copy() *Usecase {
 	return &Usecase{
-		Function: u.Function.Copy().(*Function),
-		Request:  u.Request.Copy().(*Struct),
-		Result:   u.Result.Copy().(*Struct),
+		Function: u.Function.Copy(),
+		Request:  u.Request.Copy(),
+		Result:   u.Result.Copy(),
 		Roles:    u.Roles,
 	}
 }

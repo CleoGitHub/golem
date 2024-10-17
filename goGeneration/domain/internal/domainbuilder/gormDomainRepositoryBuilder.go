@@ -15,6 +15,8 @@ const (
 )
 
 type GormDomainRepositoryBuilder struct {
+	*EmptyBuilder
+
 	DomainBuilder    *domainBuilder
 	DomainRepository *model.File
 	Migrations       string
@@ -40,31 +42,21 @@ func NewGormDomainRepositoryBuilder(
 
 var _ Builder = (*GormDomainRepositoryBuilder)(nil)
 
-func (builder *GormDomainRepositoryBuilder) WithModel(ctx context.Context, model *coredomaindefinition.Model) Builder {
+func (builder *GormDomainRepositoryBuilder) WithModel(ctx context.Context, model *coredomaindefinition.Model) {
 	if builder.Err != nil {
-		return builder
+		return
 	}
 
 	builder.Migrations += fmt.Sprintf("&%s{},", GetModelName(ctx, model)) + "\n"
 
-	return builder
+	return
 }
 
-// WithRelation implements Builder.
-func (builder *GormDomainRepositoryBuilder) WithRelation(ctx context.Context, relationDefinition *coredomaindefinition.Relation) Builder {
-	return builder
-}
-
-// WithRepository implements Builder.
-func (builder *GormDomainRepositoryBuilder) WithRepository(ctx context.Context, repositoryDefinition *coredomaindefinition.Repository) Builder {
-	return builder
-}
-
-func (builder *GormDomainRepositoryBuilder) addTransaction(ctx context.Context) *GormDomainRepositoryBuilder {
+func (builder *GormDomainRepositoryBuilder) addTransaction(ctx context.Context) {
 	if builder.Err != nil {
-		return builder
+		return
 	}
-	builder.DomainBuilder.Domain.Ports = append(builder.DomainBuilder.Domain.Ports, &model.File{
+	builder.DomainBuilder.Domain.Files = append(builder.DomainBuilder.Domain.Files, &model.File{
 		Name: TRANSACTION_NAME,
 		Pkg:  builder.DomainBuilder.GetGormAdapterPackage(),
 		Elements: []interface{}{
@@ -155,11 +147,13 @@ func (builder *GormDomainRepositoryBuilder) addTransaction(ctx context.Context) 
 			},
 		},
 	})
-
-	return nil
 }
 
 func (builder *GormDomainRepositoryBuilder) Build(ctx context.Context) error {
+	if builder.Err != nil {
+		return builder.Err
+	}
+
 	builder.addTransaction(ctx)
 
 	gormDomainRepo := &model.Struct{
@@ -312,7 +306,7 @@ func (builder *GormDomainRepositoryBuilder) Build(ctx context.Context) error {
 			}
 		},
 	}
-	builder.DomainBuilder.Domain.Ports = append(builder.DomainBuilder.Domain.Ports, &model.File{
+	builder.DomainBuilder.Domain.Files = append(builder.DomainBuilder.Domain.Files, &model.File{
 		Name: GetGormDomainRepositoryName(ctx, builder.DomainBuilder.Definition),
 		Elements: []interface{}{
 			byOperatorToGormOperator,

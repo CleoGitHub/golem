@@ -40,9 +40,6 @@ func StringifyStructUsecase(ctx context.Context, pkgManager *gopkgmanager.GoPkgM
 			return "", merror.Stack(err)
 		}
 		str += fmt.Sprintf("func (%s *%s) %s {", s.GetMethodName(), s.Name, st) + consts.LN
-		if method.Content == nil {
-			fmt.Printf("%s\n", method.Name)
-		}
 		s, pkgs := method.Content()
 		for _, pkg := range pkgs {
 			if err := pkgManager.ImportPkg(pkg); err != nil {

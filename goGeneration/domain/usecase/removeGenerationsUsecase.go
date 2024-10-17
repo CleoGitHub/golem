@@ -20,7 +20,7 @@ func (g *GenerationUsecaseImpl) RemoveGenerationsUsecase(ctx context.Context, pa
 	}
 
 	for _, f := range files {
-		if !f.IsDir() && strings.HasSuffix(f.Name(), ".golem.go") {
+		if !f.IsDir() && (strings.Contains(f.Name(), ".golem.")) {
 			if err := os.Remove(path + "/" + f.Name()); err != nil {
 				return merror.Stack(err)
 			}
@@ -41,7 +41,7 @@ func removeGenerationInFolder(ctx context.Context, path string) error {
 	}
 
 	for _, f := range files {
-		if !f.IsDir() && strings.HasSuffix(f.Name(), ".golem.go") {
+		if !f.IsDir() && (strings.Contains(f.Name(), ".golem.")) {
 			fmt.Printf("Removing generated file: %s\n", path+"/"+f.Name())
 			if err := os.Remove(path + "/" + f.Name()); err != nil {
 				return merror.Stack(err)

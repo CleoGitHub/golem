@@ -29,6 +29,9 @@ var (
 	ErrUnexpectedValidationRule = errors.New("unexpected validation rule: {{ rule }}")
 
 	ErrRelationDoesNotBelongToModel = errors.New("relation does not belong to model")
+
+	// ErrModelNotActivable is returned when the model is not activable and an action is performed on it depending on active element
+	ErrModelNotActivable = errors.New("model {model} and his dependency relations is not activable")
 )
 
 func NewErrUnknownType(t string) error {
@@ -64,5 +67,10 @@ func NewErrValidationValueExpectedType(rule string, t string) error {
 
 func NewErrUnexpectedValidationRule(rule string) error {
 	str := strings.Replace(ErrUnexpectedValidationRule.Error(), "{{ rule }}", rule, 1)
+	return errors.New(str)
+}
+
+func NewErrRelationNotActivable(model string) error {
+	str := strings.Replace(ErrModelNotActivable.Error(), "{model}", model, 1)
 	return errors.New(str)
 }

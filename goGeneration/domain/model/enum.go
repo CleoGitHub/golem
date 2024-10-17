@@ -10,10 +10,10 @@ func (e *Enum) GetType(opts ...GetTypeOpt) string {
 	return e.Name
 }
 
-func (e *Enum) Copy() Type {
+func (e *Enum) Copy() *Enum {
 	return &Enum{
 		Name:   e.Name,
-		Type:   e.Type.Copy(),
+		Type:   Copy(e.Type),
 		Values: e.Values,
 	}
 }

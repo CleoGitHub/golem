@@ -52,13 +52,13 @@ func (g *GenerationUsecaseImpl) GenerateDomainUsecase(ctx context.Context, domai
 		return merror.Stack(err)
 	}
 
-	for _, m := range domain.ModelsV2 {
+	for _, m := range domain.Models {
 		if err := g.Write(ctx, domain.Architecture.ModelPkg, m, path); err != nil {
 			return merror.Stack(err)
 		}
 	}
 
-	for _, port := range domain.Ports {
+	for _, port := range domain.Files {
 		if err := g.Write(ctx, port.Pkg, port, path); err != nil {
 			return merror.Stack(err)
 		}

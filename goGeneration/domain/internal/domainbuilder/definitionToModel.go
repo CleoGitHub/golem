@@ -65,7 +65,7 @@ func (b *domainBuilder) FieldDefinitionToField(ctx context.Context, fieldDefinit
 	}
 
 	return &model.Field{
-		Name: GetFieldName(ctx, fieldDefinition),
+		Name: GetFieldName(ctx, fieldDefinition.Name),
 		Type: t,
 		Tags: []*model.Tag{
 			{

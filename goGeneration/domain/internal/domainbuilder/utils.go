@@ -13,17 +13,17 @@ import (
 
 func PluralizeName(ctx context.Context, name string) string {
 	if strings.HasSuffix(name, "y") {
-		return stringtool.UpperFirstLetter(name[:len(name)-1]) + "ies"
+		return name[:len(name)-1] + "ies"
 	}
-	return stringtool.UpperFirstLetter(name) + "s"
+	return name + "s"
 }
 
 func GetMethodName(ctx context.Context, s *model.Struct) string {
 	return stringtool.LowerFirstLetter(s.Name)
 }
 
-func GetFieldName(ctx context.Context, fieldDefinition *coredomaindefinition.Field) string {
-	return stringtool.UpperFirstLetter(fieldDefinition.Name)
+func GetFieldName(ctx context.Context, name string) string {
+	return stringtool.UpperFirstLetter(name)
 }
 
 func GetModelName(ctx context.Context, modelDefinition *coredomaindefinition.Model) string {
@@ -39,7 +39,7 @@ func GetSingleRelationIdName(ctx context.Context, m *coredomaindefinition.Model)
 }
 
 func GetMultipleRelationName(ctx context.Context, m *coredomaindefinition.Model) string {
-	return PluralizeName(ctx, m.Name)
+	return PluralizeName(ctx, GetModelName(ctx, m))
 }
 
 func GetMultipleRelationIdsName(ctx context.Context, m *coredomaindefinition.Model) string {

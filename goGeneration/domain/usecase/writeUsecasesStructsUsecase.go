@@ -1,50 +1,39 @@
 package usecase
 
-import (
-	"context"
-	"os"
+// func (g *GenerationUsecaseImpl) WriteUsecasesStructsUsecase(ctx context.Context, domain *model.Domain, path string) error {
+// 	// if file path does not exist, create it
+// 	filepath := path + "/" + domain.Architecture.UsecasePkg.FullName
+// 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+// 		if err := os.MkdirAll(filepath, os.ModePerm); err != nil {
+// 			return merror.Stack(err)
+// 		}
+// 	}
 
-	"github.com/cleogithub/golem-common/pkg/merror"
-	"github.com/cleogithub/golem/goGeneration/domain/consts"
-	"github.com/cleogithub/golem/goGeneration/domain/internal/gopkgmanager"
-	"github.com/cleogithub/golem/goGeneration/domain/internal/stringifier"
-	"github.com/cleogithub/golem/goGeneration/domain/model"
-)
+// 	f, err := os.Create(filepath + "/structs.go")
+// 	if err != nil {
+// 		return merror.Stack(err)
+// 	}
+// 	defer f.Close()
 
-func (g *GenerationUsecaseImpl) WriteUsecasesStructsUsecase(ctx context.Context, domain *model.Domain, path string) error {
-	// if file path does not exist, create it
-	filepath := path + "/" + domain.Architecture.UsecasePkg.FullName
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		if err := os.MkdirAll(filepath, os.ModePerm); err != nil {
-			return merror.Stack(err)
-		}
-	}
+// 	pkgManager := &gopkgmanager.GoPkgManager{
+// 		Pkg: domain.Architecture.UsecasePkg.ShortName,
+// 	}
 
-	f, err := os.Create(filepath + "/structs.go")
-	if err != nil {
-		return merror.Stack(err)
-	}
-	defer f.Close()
+// 	str := ""
+// 	for _, strct := range domain.UsecaseStructs {
+// 		s, err := stringifier.StringifyStructUsecase(ctx, pkgManager, strct)
+// 		if err != nil {
+// 			return merror.Stack(err)
+// 		}
+// 		str += s
+// 		str += consts.LN
+// 	}
 
-	pkgManager := &gopkgmanager.GoPkgManager{
-		Pkg: domain.Architecture.UsecasePkg.ShortName,
-	}
+// 	str = pkgManager.ToString() + consts.LN + str
+// 	_, err = f.WriteString(str)
+// 	if err != nil {
+// 		return merror.Stack(err)
+// 	}
 
-	str := ""
-	for _, strct := range domain.UsecaseStructs {
-		s, err := stringifier.StringifyStructUsecase(ctx, pkgManager, strct)
-		if err != nil {
-			return merror.Stack(err)
-		}
-		str += s
-		str += consts.LN
-	}
-
-	str = pkgManager.ToString() + consts.LN + str
-	_, err = f.WriteString(str)
-	if err != nil {
-		return merror.Stack(err)
-	}
-
-	return nil
-}
+// 	return nil
+// }

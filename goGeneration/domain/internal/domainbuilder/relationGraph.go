@@ -128,8 +128,8 @@ func (g *RelationGraph) GetNode(model *coredomaindefinition.Model) *RelationNode
 }
 
 func (builder *domainBuilder) buildRelationGraph(ctx context.Context) (*model.File, error) {
-	if builder.Err != nil {
-		return nil, builder.Err
+	if builder.err != nil {
+		return nil, builder.err
 	}
 
 	file := &model.File{
