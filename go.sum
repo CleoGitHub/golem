@@ -1,3 +1,5 @@
+github.com/cleogithub/golem-common v0.0.0-20241017055819-ce53b6c3aece h1:pKGea5D/7K6XqDDVdjZvZRKMLnIwDKfRGRwyjs8/qio=
+github.com/cleogithub/golem-common v0.0.0-20241017055819-ce53b6c3aece/go.mod h1:k8SonkhbEi5oDe4gXZ+KSc1w+cDtXy9repfo5NcHVDI=
 github.com/segmentio/go-camelcase v0.0.0-20160726192923-7085f1e3c734 h1:Cpx2WLIv6fuPvaJAHNhYOgYzk/8RcJXu/8+mOrxf2KM=
 github.com/segmentio/go-camelcase v0.0.0-20160726192923-7085f1e3c734/go.mod h1:hqVOMAwu+ekffC3Tvq5N1ljnXRrFKcaSjbCmQ8JgYaI=
 github.com/segmentio/go-snakecase v1.2.0 h1:4cTmEjPGi03WmyAHWBjX53viTpBkn/z+4DO++fqYvpw=
