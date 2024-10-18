@@ -204,7 +204,7 @@ func (builder *domainBuilder) WithModel(ctx context.Context, modelDefinition *co
 		return builder
 	}
 
-	builder.builders = append(builder.builders, builder.NewModelBuilder(ctx, modelDefinition))
+	builder.AddBuilder(ctx, builder.NewModelBuilder(ctx, modelDefinition))
 
 	builder.ModelDefinitionsToBuild = append(builder.ModelDefinitionsToBuild, modelDefinition)
 
@@ -220,7 +220,7 @@ func (builder *domainBuilder) WithRepository(ctx context.Context, repositoryDefi
 		return builder
 	}
 
-	builder.builders = append(builder.builders, builder.NewGormRepositoryBuilder(ctx, repositoryDefinition))
+	builder.AddBuilder(ctx, builder.NewGormRepositoryBuilder(ctx, repositoryDefinition))
 
 	builder.RepositoryDefinitionsToBuild = append(builder.RepositoryDefinitionsToBuild, repositoryDefinition)
 
@@ -281,34 +281,6 @@ func (builder *domainBuilder) Build(ctx context.Context) (*model.Domain, error) 
 
 	builder.addOrdering(ctx)
 	builder.addPagination(ctx)
-
-	// builder.builders = append(builder.builders, )
-
-	// for _, modelDefinition := range builder.ModelDefinitionsToBuild {
-	// 	for _, b := range builder.builders {
-	// 		b.WithModel(ctx, modelDefinition)
-	// 	}
-	// }
-	// for _, relationDefinition := range builder.RelationDefinitionsToBuild {
-	// 	for _, b := range builder.builders {
-	// 		b.WithRelation(ctx, relationDefinition)
-	// 	}
-	// }
-	// for _, repositoryDefinition := range builder.RepositoryDefinitionsToBuild {
-	// 	for _, b := range builder.builders {
-	// 		b.WithRepository(ctx, repositoryDefinition)
-	// 	}
-	// }
-	// for _, crudDefinition := range builder.CRUDToBuild {
-	// 	for _, b := range builder.builders {
-	// 		b.WithCRUD(ctx, crudDefinition)
-	// 	}
-	// }
-	// for _, usecaseDefinition := range builder.UsecaseDefinitionsToBuild {
-	// 	for _, b := range builder.builders {
-	// 		b.WithUsecase(ctx, usecaseDefinition)
-	// 	}
-	// }
 
 	port, err := builder.buildRelationGraph(ctx)
 	if err != nil {

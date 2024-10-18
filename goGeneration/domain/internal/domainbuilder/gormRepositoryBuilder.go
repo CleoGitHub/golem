@@ -232,10 +232,13 @@ func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation
 		return
 	}
 
+	fmt.Printf("Relation: %s => %s", relation.Source.Name, relation.Target.Name)
+
 	if relation.Source != builder.Definition.On && relation.Target != builder.Definition.On {
 		return
 	}
 
+	fmt.Printf("Relation: %s => %s", relation.Source.Name, relation.Target.Name)
 	var to *coredomaindefinition.Model
 	if relation.Source == builder.Definition.On {
 		to = relation.Target
@@ -245,8 +248,14 @@ func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation
 		}
 		to = relation.Source
 	}
+	if to.Name == "user" {
+		fmt.Printf("It is user")
+	}
 
 	if !IsRelationMultiple(ctx, builder.Definition.On, relation) {
+		if to.Name == "user" {
+			fmt.Printf("It not multiple relation")
+		}
 		field := &model.Field{
 			Name: GetSingleRelationName(ctx, to),
 			Type: &model.PointerType{

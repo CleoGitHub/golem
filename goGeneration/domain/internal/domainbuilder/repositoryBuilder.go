@@ -585,10 +585,6 @@ func (builder *RepositoryBuilder) addContextFieldOpt(ctx context.Context, method
 	}
 }
 
-func (builder *RepositoryBuilder) addToHttpService(ctx context.Context, method *model.Function, request *model.Struct, response *model.Struct) {
-
-}
-
 func (builder *RepositoryBuilder) Build(ctx context.Context) error {
 	if builder.Err != nil {
 		return builder.Err

@@ -48,8 +48,6 @@ func (builder *GormDomainRepositoryBuilder) WithModel(ctx context.Context, model
 	}
 
 	builder.Migrations += fmt.Sprintf("&%s{},", GetModelName(ctx, model)) + "\n"
-
-	return
 }
 
 func (builder *GormDomainRepositoryBuilder) addTransaction(ctx context.Context) {
