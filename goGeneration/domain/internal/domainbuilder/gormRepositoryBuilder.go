@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	GORM_MODEL_METHOD_NAME               = "gormModel"
-	GORM_DOMAIN_REPOSITORY_DB_FIELD_NAME = "db"
-	GORM_METHOD_CONTEXT_NAME             = "methodCtx"
-	GORM_REQUEST_NAME                    = "request"
-	OPERATOR_TO_GORM_OPERATOR            = "RepositoryOperatorToGormOperator"
-	VALUE_TO_GORM_VALUE                  = "ValueToGormValue"
+	GORM_MODEL_METHOD_NAME    = "gormModel"
+	GORM_DB_VAR_NAME          = "db"
+	GORM_METHOD_CONTEXT_NAME  = "methodCtx"
+	GORM_REQUEST_NAME         = "request"
+	OPERATOR_TO_GORM_OPERATOR = "RepositoryOperatorToGormOperator"
+	VALUE_TO_GORM_VALUE       = "ValueToGormValue"
 )
 
 func ModelToGormModel(ctx context.Context, on *coredomaindefinition.Model) string {
@@ -232,13 +232,10 @@ func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation
 		return
 	}
 
-	fmt.Printf("Relation: %s => %s", relation.Source.Name, relation.Target.Name)
-
 	if relation.Source != builder.Definition.On && relation.Target != builder.Definition.On {
 		return
 	}
 
-	fmt.Printf("Relation: %s => %s", relation.Source.Name, relation.Target.Name)
 	var to *coredomaindefinition.Model
 	if relation.Source == builder.Definition.On {
 		to = relation.Target
@@ -248,14 +245,8 @@ func (builder *GormRepositoryBuilder) WithRelation(ctx context.Context, relation
 		}
 		to = relation.Source
 	}
-	if to.Name == "user" {
-		fmt.Printf("It is user")
-	}
 
 	if !IsRelationMultiple(ctx, builder.Definition.On, relation) {
-		if to.Name == "user" {
-			fmt.Printf("It not multiple relation")
-		}
 		field := &model.Field{
 			Name: GetSingleRelationName(ctx, to),
 			Type: &model.PointerType{
@@ -876,11 +867,11 @@ func (builder *GormRepositoryBuilder) getGormTransactionInitialisation(ctx conte
 		extraReturns = fmt.Sprintf("%s, ", extraReturns)
 	}
 	str += fmt.Sprintf(`if !ok { return %s %s.New("expected transaction to be *gorm.DB") }`, extraReturns, consts.CommonPkgs["errors"].Alias) + consts.LN
-	str += fmt.Sprintf("%s = tx", GORM_DOMAIN_REPOSITORY_DB_FIELD_NAME) + consts.LN
+	str += fmt.Sprintf("%s = tx", GORM_DB_VAR_NAME) + consts.LN
 	str += "} else { " + consts.LN
 	str += fmt.Sprintf(
 		"%s = %s.%s",
-		GORM_DOMAIN_REPOSITORY_DB_FIELD_NAME,
+		GORM_DB_VAR_NAME,
 		GORM_DOMAIN_REPO_METHOD_NAME,
 		GORM_DOMAIN_REPOSITORY_DB_FIELD_NAME,
 	) + consts.LN
@@ -894,7 +885,7 @@ func (builder *GormRepositoryBuilder) getGormTransactionInitialisation(ctx conte
 }
 
 func (builder *GormRepositoryBuilder) getRequestModelWithDependencyTree(ctx context.Context) (string, []*model.GoPkg) {
-	str := fmt.Sprintf("%s := %s.Model(&%s{})", GORM_REQUEST_NAME, GORM_DOMAIN_REPOSITORY_DB_FIELD_NAME, builder.Model.Name) + consts.LN
+	str := fmt.Sprintf("%s := %s.Model(&%s{})", GORM_REQUEST_NAME, GORM_DB_VAR_NAME, builder.Model.Name) + consts.LN
 	if builder.Definition.On.Activable {
 		str += fmt.Sprintf("if !%s.%s {", GORM_METHOD_CONTEXT_NAME, REPOSITORY_RETRIEVE_INACTIVE) + consts.LN
 		str += fmt.Sprintf("%s.Where(&%s{%s: true})", GORM_REQUEST_NAME, GetModelName(ctx, builder.Definition.On), ACTIVE_FIELD_NAME) + consts.LN

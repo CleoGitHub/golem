@@ -8,5 +8,6 @@ type Architecture struct {
 	ControllerPkg     *GoPkg
 	SdkPkg            *GoPkg
 	HttpControllerPkg *GoPkg
+	ConstsPkg         *GoPkg
 	JavascriptClient  string
 }

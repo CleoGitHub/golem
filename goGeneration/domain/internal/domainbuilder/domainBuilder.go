@@ -55,6 +55,8 @@ func NewDomainBuilder(
 		},
 	}
 	builder.setArchitecture(ctx)
+	builder.addConsts(ctx)
+	builder.addLogger(ctx)
 
 	builder.builders = append(builder.builders, NewDomainRepositoryBuilder(ctx, builder))
 	builder.builders = append(builder.builders, NewGormDomainRepositoryBuilder(ctx, builder, builder.Definition))
@@ -77,7 +79,7 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 			Alias:     "model",
 			FullName: fmt.Sprintf(
 				"%s/domain/model",
-				builder.Definition.Name,
+				builder.Definition.Configuration.Package,
 			),
 		},
 		RepositoryPkg: &model.GoPkg{
@@ -85,7 +87,7 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 			Alias:     "repository",
 			FullName: fmt.Sprintf(
 				"%s/domain/port/repository",
-				builder.Definition.Name,
+				builder.Definition.Configuration.Package,
 			),
 		},
 		UsecasePkg: &model.GoPkg{
@@ -93,7 +95,7 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 			Alias:     "usecase",
 			FullName: fmt.Sprintf(
 				"%s/domain/usecase",
-				builder.Definition.Name,
+				builder.Definition.Configuration.Package,
 			),
 		},
 		ControllerPkg: &model.GoPkg{
@@ -101,7 +103,7 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 			Alias:     "controller",
 			FullName: fmt.Sprintf(
 				"%s/adapter/controller",
-				builder.Definition.Name,
+				builder.Definition.Configuration.Package,
 			),
 		},
 		HttpControllerPkg: &model.GoPkg{
@@ -109,7 +111,7 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 			Alias:     "httpadapter",
 			FullName: fmt.Sprintf(
 				"%s/adapter/controller/httpadapter",
-				builder.Definition.Name,
+				builder.Definition.Configuration.Package,
 			),
 		},
 		GormAdapterPkg: &model.GoPkg{
@@ -117,7 +119,7 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 			Alias:     "gormadapter",
 			FullName: fmt.Sprintf(
 				"%s/adapter/repository/gormadapter",
-				builder.Definition.Name,
+				builder.Definition.Configuration.Package,
 			),
 		},
 		SdkPkg: &model.GoPkg{
@@ -125,7 +127,15 @@ func (builder *domainBuilder) setArchitecture(ctx context.Context) *domainBuilde
 			Alias:     "client",
 			FullName: fmt.Sprintf(
 				"%s/sdk/client",
-				builder.Definition.Name,
+				builder.Definition.Configuration.Package,
+			),
+		},
+		ConstsPkg: &model.GoPkg{
+			ShortName: "consts",
+			Alias:     "consts",
+			FullName: fmt.Sprintf(
+				"%s/domain/consts",
+				builder.Definition.Configuration.Package,
 			),
 		},
 		JavascriptClient: fmt.Sprintf(
@@ -197,6 +207,10 @@ func (domainBuilder *domainBuilder) GetHttpControllerPackage() *model.GoPkg {
 
 func (domainBuilder *domainBuilder) GetSdkPackage() *model.GoPkg {
 	return domainBuilder.Domain.Architecture.SdkPkg
+}
+
+func (domainBuilder *domainBuilder) GetConstsPackage() *model.GoPkg {
+	return domainBuilder.Domain.Architecture.ConstsPkg
 }
 
 func (builder *domainBuilder) WithModel(ctx context.Context, modelDefinition *coredomaindefinition.Model) *domainBuilder {
@@ -514,6 +528,136 @@ func (builder *domainBuilder) addPagination(ctx context.Context) {
 			WHERE,
 			WHERE_OPERATOR,
 			PAGINATION,
+		},
+	})
+}
+
+func (domainBuilder *domainBuilder) addConsts(ctx context.Context) {
+	if domainBuilder.err != nil {
+		return
+	}
+
+	errStacker := &model.TypeDefinition{
+		Name: "ErrStacker",
+		Type: &model.Function{
+			Name: "",
+			Args: []*model.Param{
+				{
+					Type: model.PrimitiveTypeError,
+				},
+			},
+			Results: []*model.Param{
+				{
+					Type: model.PrimitiveTypeError,
+				},
+			},
+		},
+	}
+
+	domainBuilder.Domain.Files = append(domainBuilder.Domain.Files, &model.File{
+		Name: "Consts",
+		Pkg:  domainBuilder.GetConstsPackage(),
+		Elements: []interface{}{
+			errStacker,
+		},
+	})
+}
+
+const (
+	LOGGER_NAME = "Logger"
+)
+
+func (domainBuilder *domainBuilder) addLogger(ctx context.Context) {
+	if domainBuilder.err != nil {
+		return
+	}
+
+	errStacker := &model.Interface{
+		Name: LOGGER_NAME,
+		Methods: []*model.Function{
+			{
+				Name: "Debugf",
+				Args: []*model.Param{
+					{
+						Name: "msg",
+						Type: model.PrimitiveTypeString,
+					},
+					{
+						Name: "args",
+						Type: &model.VariaidicType{
+							Type: model.PrimitiveTypeInterface,
+						},
+					},
+				},
+			},
+			{
+				Name: "Infof",
+				Args: []*model.Param{
+					{
+						Name: "msg",
+						Type: model.PrimitiveTypeString,
+					},
+					{
+						Name: "args",
+						Type: &model.VariaidicType{
+							Type: model.PrimitiveTypeInterface,
+						},
+					},
+				},
+			},
+			{
+				Name: "Warnf",
+				Args: []*model.Param{
+					{
+						Name: "msg",
+						Type: model.PrimitiveTypeString,
+					},
+					{
+						Name: "args",
+						Type: &model.VariaidicType{
+							Type: model.PrimitiveTypeInterface,
+						},
+					},
+				},
+			},
+			{
+				Name: "Errorf",
+				Args: []*model.Param{
+					{
+						Name: "msg",
+						Type: model.PrimitiveTypeString,
+					},
+					{
+						Name: "args",
+						Type: &model.VariaidicType{
+							Type: model.PrimitiveTypeInterface,
+						},
+					},
+				},
+			},
+			{
+				Name: "Fatalf",
+				Args: []*model.Param{
+					{
+						Name: "msg",
+						Type: model.PrimitiveTypeString,
+					},
+					{
+						Name: "args",
+						Type: &model.VariaidicType{
+							Type: model.PrimitiveTypeInterface,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	domainBuilder.Domain.Files = append(domainBuilder.Domain.Files, &model.File{
+		Name: "logger",
+		Pkg:  domainBuilder.GetConstsPackage(),
+		Elements: []interface{}{
+			errStacker,
 		},
 	})
 }

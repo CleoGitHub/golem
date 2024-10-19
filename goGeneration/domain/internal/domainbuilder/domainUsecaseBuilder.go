@@ -499,29 +499,6 @@ func (builder *DomainUsecaseBuilder) WithUsecase(ctx context.Context, definition
 	builder.validator.Methods = append(builder.validator.Methods, m)
 
 	builder.addRolesCheck(ctx, GetUsecaseMethodName(ctx, definition.Name), GetUsecaseRequestName(ctx, definition.Name), GetUsecaseResponseName(ctx, definition.Name), definition.Roles)
-
-	// m = m.Copy()
-	// m.Content = func() (string, []*model.GoPkg) {
-	// 	str := ""
-	// 	if len(definition.Roles) > 0 {
-	// 		str += `token := ctx.Value("token").(string)` + consts.LN
-	// 		str += fmt.Sprintf(`allowed, err := %s.%s.%s(ctx, "", []string{%s})`, builder.security.GetMethodName(), SECURITY_NAME, SECURITY_IS_ALLOWED_METHOD_NAME, strings.Join(definition.Roles, ", ")) + consts.LN
-	// 		str += "if err != nil {" + consts.LN
-	// 		str += "return nil, err" + consts.LN
-	// 		str += "}" + consts.LN
-
-	// 		str += "if !allowed {" + consts.LN
-	// 		str += fmt.Sprintf("return nil, %s", ERR_NOT_ALLOWED_NAME) + consts.LN
-	// 		str += "}" + consts.LN
-	// 	}
-
-	// 	str += fmt.Sprintf("return %s.%s.%s(ctx, %s)",
-	// 		builder.security.GetMethodName(), VALIDATOR_USECASE_FIELD_NAME, GetUsecaseMethodName(ctx, definition.Name), REQUEST_PARAM_NAME,
-	// 	)
-
-	// 	return str, []*model.GoPkg{}
-	// }
-	// builder.security.Methods = append(builder.security.Methods, m)
 }
 
 func (builder *DomainUsecaseBuilder) addSDK(ctx context.Context) {
@@ -638,6 +615,7 @@ const (
 	VALIDATOR_NEW_UNIQUE_ERROR_METHOD_NAME    = "NewUniqueError"
 	VALIDATOR_VALIDATE_METHOD_NAME            = "Validate"
 	VALIDATOR_VALIDATE_MIME_TYPES_METHOD_NAME = "ValidateMimeTypes"
+	VALIDATOR_AS_VALIDATION_ERROR_METHOD_NAME = "AsValidationError"
 )
 
 func (builder *DomainUsecaseBuilder) addSecurity(ctx context.Context) {
@@ -816,6 +794,34 @@ func (builder *DomainUsecaseBuilder) addValidator(ctx context.Context) {
 					},
 					{
 						Name: "field",
+						Type: model.PrimitiveTypeString,
+					},
+				},
+				Results: []*model.Param{
+					{
+						Type: model.PrimitiveTypeError,
+					},
+				},
+			},
+			{
+
+				Name: VALIDATOR_AS_VALIDATION_ERROR_METHOD_NAME,
+				Args: []*model.Param{
+					{
+						Name: "ctx",
+						Type: &model.PkgReference{
+							Pkg: consts.CommonPkgs["context"],
+							Reference: &model.ExternalType{
+								Type: "Context",
+							},
+						},
+					},
+					{
+						Name: "field",
+						Type: model.PrimitiveTypeString,
+					},
+					{
+						Name: "message",
 						Type: model.PrimitiveTypeString,
 					},
 				},

@@ -49,6 +49,7 @@ if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
+	 	{{ .ControllerName }}.{{ .Logger }}.Errorf(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -61,6 +62,7 @@ json.NewEncoder(w).Encode(result)
 
 const (
 	ROUTE_REGISTRATION_PARAM = "router"
+	CONTROLLER_LOGGER_FIELD  = "Logger"
 )
 
 type RouteTemplate struct {
@@ -76,6 +78,8 @@ type RouteTemplate struct {
 	OptionalFieldExtraction     string
 	UsecaseErrNotAllowed        string
 	UsecaseErrUnauthorized      string
+	Logger                      string
+	ConstsPkg                   string
 }
 
 type HttpControllerBuilder struct {
@@ -111,6 +115,15 @@ func NewHttpControllerBuilder(ctx context.Context, domainDefinition *coredomaind
 						Pkg: domain.Architecture.UsecasePkg,
 						Reference: &model.ExternalType{
 							Type: VALIDATOR_NAME,
+						},
+					},
+				},
+				{
+					Name: CONTROLLER_LOGGER_FIELD,
+					Type: &model.PkgReference{
+						Pkg: domain.Architecture.ConstsPkg,
+						Reference: &model.ExternalType{
+							Type: LOGGER_NAME,
 						},
 					},
 				},
@@ -237,6 +250,8 @@ func (builder *HttpControllerBuilder) getRouteContent(ctx context.Context, metho
 		OptionalFieldExtraction:     optionalFieldExtraction,
 		UsecaseErrUnauthorized:      ERR_UNAUTHORIZED_NAME,
 		UsecaseErrNotAllowed:        ERR_NOT_ALLOWED_NAME,
+		Logger:                      CONTROLLER_LOGGER_FIELD,
+		ConstsPkg:                   builder.domain.Architecture.ConstsPkg.Alias,
 	}
 
 	buffer := bytes.NewBufferString("")

@@ -61,38 +61,38 @@ func (g *GenerationUsecaseImpl) GenerateDomainUsecase(ctx context.Context, domai
 		return merror.Stack(err)
 	}
 
-	if err := g.initDomainUsecase(ctx, domain, path); err != nil {
+	if err := g.initDomainUsecase(ctx, &domainDefinition, path); err != nil {
 		return merror.Stack(err)
 	}
 
 	for _, m := range domain.Models {
-		if err := g.write(ctx, domain.Architecture.ModelPkg, m, path); err != nil {
+		if err := g.write(ctx, &domainDefinition, domain.Architecture.ModelPkg, m, path); err != nil {
 			return merror.Stack(err)
 		}
 	}
 
 	for _, port := range domain.Files {
-		if err := g.write(ctx, port.Pkg, port, path); err != nil {
+		if err := g.write(ctx, &domainDefinition, port.Pkg, port, path); err != nil {
 			return merror.Stack(err)
 		}
-	}
-
-	if err := g.formatDomainUsecase(ctx, domain, path); err != nil {
-		return merror.Stack(err)
-	}
-
-	if err := g.goTidyDomainUsecase(ctx, path, domain); err != nil {
-		return merror.Stack(err)
 	}
 
 	if err := g.generateJavascriptClientUsecase(ctx, domain, path); err != nil {
 		return merror.Stack(err)
 	}
 
+	if err := g.formatDomainUsecase(ctx, &domainDefinition, path); err != nil {
+		return merror.Stack(err)
+	}
+
+	if err := g.goTidyDomainUsecase(ctx, path, &domainDefinition); err != nil {
+		return merror.Stack(err)
+	}
+
 	return nil
 }
 
-func (g *GenerationUsecaseImpl) initDomainUsecase(ctx context.Context, domain *model.Domain, path string) error {
+func (g *GenerationUsecaseImpl) initDomainUsecase(ctx context.Context, domain *coredomaindefinition.Domain, path string) error {
 	// if go.mod file does not exist at root folder, create it
 	//check path exist or create if
 	if _, err := os.Stat(path + "/" + domain.Name); os.IsNotExist(err) {
@@ -104,7 +104,7 @@ func (g *GenerationUsecaseImpl) initDomainUsecase(ctx context.Context, domain *m
 	// init go.mod file if not exist
 	if _, err := os.Stat(path + "/" + domain.Name + "/go.mod"); os.IsNotExist(err) {
 		// create go.mod file
-		cmd := exec.Command("go", "mod", "init", domain.Name)
+		cmd := exec.Command("go", "mod", "init", domain.Configuration.Package)
 		cmd.Dir = path + "/" + domain.Name
 		if err := cmd.Run(); err != nil {
 			return merror.Stack(err)
@@ -114,7 +114,7 @@ func (g *GenerationUsecaseImpl) initDomainUsecase(ctx context.Context, domain *m
 	return nil
 }
 
-func (g *GenerationUsecaseImpl) goTidyDomainUsecase(ctx context.Context, path string, domain *model.Domain) error {
+func (g *GenerationUsecaseImpl) goTidyDomainUsecase(ctx context.Context, path string, domain *coredomaindefinition.Domain) error {
 	cmd := exec.Command("go", "mod", "tidy")
 	cmd.Dir = path + "/" + domain.Name
 
@@ -125,7 +125,7 @@ func (g *GenerationUsecaseImpl) goTidyDomainUsecase(ctx context.Context, path st
 	return nil
 }
 
-func (u GenerationUsecaseImpl) formatDomainUsecase(ctx context.Context, domain *model.Domain, path string) error {
+func (u GenerationUsecaseImpl) formatDomainUsecase(ctx context.Context, domain *coredomaindefinition.Domain, path string) error {
 	// use command gofmt to format go files in generation folder
 	cmd := exec.Command("gofmt", "-w", "-s", path+"/"+domain.Name)
 	errWriter := bytes.NewBufferString("")
@@ -140,6 +140,11 @@ func (u GenerationUsecaseImpl) formatDomainUsecase(ctx context.Context, domain *
 // GenerateDomainUsecase implements GenerationUsecase.
 func (g *GenerationUsecaseImpl) removeGenerationsUsecase(ctx context.Context, path string) error {
 	// go deep through the domain and remove all generated filed ending with golem.go
+
+	// if path does not exist, return
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
 
 	// list all files in the path
 	files, err := os.ReadDir(path)
@@ -183,9 +188,13 @@ func removeGenerationInFolder(ctx context.Context, path string) error {
 	return nil
 }
 
-func (g *GenerationUsecaseImpl) write(ctx context.Context, inPkg *model.GoPkg, elem interface{}, path string) (err error) {
+func (g *GenerationUsecaseImpl) write(ctx context.Context, domain *coredomaindefinition.Domain, inPkg *model.GoPkg, elem interface{}, path string) (err error) {
 	// if file path does not exist, create it
-	filepath := path + "/" + inPkg.FullName
+	filepath := path + "/" + strings.ReplaceAll(inPkg.FullName, domain.Configuration.Package, domain.Name)
+	filepath = stringtool.RemoveDuplicate(filepath, '/')
+	// fmt.Printf("Writing to file: %s\n", filepath)
+	// return nil
+
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		if err := os.MkdirAll(filepath, os.ModePerm); err != nil {
 			return merror.Stack(err)

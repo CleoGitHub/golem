@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	GORM_DOMAIN_REPO_METHOD_NAME = "repo"
+	GORM_DOMAIN_REPO_METHOD_NAME         = "repo"
+	GORM_DOMAIN_REPOSITORY_DB_FIELD_NAME = "DB"
 )
 
 type GormDomainRepositoryBuilder struct {
@@ -63,7 +64,7 @@ func (builder *GormDomainRepositoryBuilder) addTransaction(ctx context.Context) 
 				MethodName: stringtool.LowerFirstLetter(TRANSACTION_NAME),
 				Fields: []*model.Field{
 					{
-						Name: "db",
+						Name: GORM_DB_VAR_NAME,
 						Type: &model.PointerType{
 							Type: &model.PkgReference{
 								Pkg: consts.CommonPkgs["gorm"],
